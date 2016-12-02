@@ -12,7 +12,7 @@ var ApplicationMain = function() { };
 $hxClasses["ApplicationMain"] = ApplicationMain;
 ApplicationMain.__name__ = ["ApplicationMain"];
 ApplicationMain.main = function() {
-	ApplicationMain.config = { build : "12", company : "Company Name", file : "Snake", fps : 25, name : "Snake", orientation : "", packageName : "com.sample.snake", version : "1.0.0", windows : [{ allowHighDPI : false, antialiasing : 0, background : 0, borderless : false, depthBuffer : false, display : 0, fullscreen : false, hardware : true, height : 0, hidden : null, maximized : null, minimized : null, parameters : "{}", resizable : true, stencilBuffer : true, title : "Snake", vsync : false, width : 0, x : null, y : null}]};
+	ApplicationMain.config = { build : "13", company : "Company Name", file : "Snake", fps : 25, name : "Snake", orientation : "", packageName : "com.sample.snake", version : "1.0.0", windows : [{ allowHighDPI : false, antialiasing : 0, background : 0, borderless : false, depthBuffer : false, display : 0, fullscreen : false, hardware : true, height : 0, hidden : null, maximized : null, minimized : null, parameters : "{}", resizable : true, stencilBuffer : true, title : "Snake", vsync : false, width : 0, x : null, y : null}]};
 };
 ApplicationMain.create = function() {
 	var app = new openfl_display_Application();
@@ -1396,6 +1396,18 @@ DocumentClass.__super__ = Main;
 DocumentClass.prototype = $extend(Main.prototype,{
 	__class__: DocumentClass
 });
+var Client = function() { };
+$hxClasses["Client"] = Client;
+Client.__name__ = ["Client"];
+Client.main = function(score,name) {
+	var cnx = haxe_remoting_HttpAsyncConnection.urlConnect("http://localhost/");
+	cnx.setErrorHandler(function(err) {
+		haxe_Log.trace("Error: " + err,{ fileName : "Client.hx", lineNumber : 4, className : "Client", methodName : "main"});
+	});
+	cnx.resolve("Server").resolve("handle_score").call([score,name],function(data) {
+		haxe_Log.trace("Result: " + data,{ fileName : "Client.hx", lineNumber : 5, className : "Client", methodName : "main"});
+	});
+};
 var lime_AssetLibrary = function() {
 	this.onChange = new lime_app__$Event_$Void_$Void();
 };
@@ -1662,7 +1674,7 @@ EReg.prototype = {
 	}
 	,__class__: EReg
 };
-var GameResult = $hxClasses["GameResult"] = { __ename__ : true, __constructs__ : ["CONTINUE","GAME_OVER"] };
+var GameResult = $hxClasses["GameResult"] = { __ename__ : ["GameResult"], __constructs__ : ["CONTINUE","GAME_OVER"] };
 GameResult.CONTINUE = ["CONTINUE",0];
 GameResult.CONTINUE.toString = $estr;
 GameResult.CONTINUE.__enum__ = GameResult;
@@ -1685,7 +1697,10 @@ Field.prototype = {
 	,every_frame: function() {
 		if(!this.game_over) {
 			if(this.first_frame) {
-				this.tile_grid = new TileGrid(30,30,this.main_sprite);
+				this.tile_grid = new TileGrid(30,30);
+				this.main_sprite.addChild(this.tile_grid);
+				this.main_sprite.stage.addEventListener("resize",($_=this.tile_grid,$bind($_,$_.create_grid_bitmap)));
+				this.main_sprite.stage.addEventListener("resize",($_=this.tile_grid,$bind($_,$_.redraw_apple)));
 				this.snake = new Snake(3,Direction.RIGHT,3,0,this.tile_grid);
 				this.tile_grid.place_apple(this.snake);
 				this.first_frame = false;
@@ -1711,14 +1726,36 @@ Field.prototype = {
 			}
 			var result = this.snake.move(this.tile_grid);
 			if(result == GameResult.GAME_OVER) this.game_over = true;
-		} else {
-		}
+		} else Client.main(this.snake.length,"Justin");
 	}
 	,__class__: Field
 };
 var HxOverrides = function() { };
 $hxClasses["HxOverrides"] = HxOverrides;
 HxOverrides.__name__ = ["HxOverrides"];
+HxOverrides.strDate = function(s) {
+	var _g = s.length;
+	switch(_g) {
+	case 8:
+		var k = s.split(":");
+		var d = new Date();
+		d.setTime(0);
+		d.setUTCHours(k[0]);
+		d.setUTCMinutes(k[1]);
+		d.setUTCSeconds(k[2]);
+		return d;
+	case 10:
+		var k1 = s.split("-");
+		return new Date(k1[0],k1[1] - 1,k1[2],0,0,0);
+	case 19:
+		var k2 = s.split(" ");
+		var y = k2[0].split("-");
+		var t = k2[1].split(":");
+		return new Date(y[0],y[1] - 1,y[2],t[0],t[1],t[2]);
+	default:
+		throw new js__$Boot_HaxeError("Invalid date format : " + s);
+	}
+};
 HxOverrides.cca = function(s,index) {
 	var x = s.charCodeAt(index);
 	if(x != x) return undefined;
@@ -1770,6 +1807,23 @@ Lambda.array = function(it) {
 	}
 	return a;
 };
+Lambda.exists = function(it,f) {
+	var $it0 = $iterator(it)();
+	while( $it0.hasNext() ) {
+		var x = $it0.next();
+		if(f(x)) return true;
+	}
+	return false;
+};
+Lambda.filter = function(it,f) {
+	var l = new List();
+	var $it0 = $iterator(it)();
+	while( $it0.hasNext() ) {
+		var x = $it0.next();
+		if(f(x)) l.add(x);
+	}
+	return l;
+};
 var List = function() {
 	this.length = 0;
 };
@@ -1783,6 +1837,12 @@ List.prototype = {
 		var x = [item];
 		if(this.h == null) this.h = x; else this.q[1] = x;
 		this.q = x;
+		this.length++;
+	}
+	,push: function(item) {
+		var x = [item,this.h];
+		this.h = x;
+		if(this.q == null) this.q = x;
 		this.length++;
 	}
 	,pop: function() {
@@ -1823,7 +1883,7 @@ _$List_ListIterator.prototype = {
 	,__class__: _$List_ListIterator
 };
 Math.__name__ = ["Math"];
-var Input = $hxClasses["Input"] = { __ename__ : true, __constructs__ : ["NONE","UP","DOWN","LEFT","RIGHT","PAUSE"] };
+var Input = $hxClasses["Input"] = { __ename__ : ["Input"], __constructs__ : ["NONE","UP","DOWN","LEFT","RIGHT","PAUSE"] };
 Input.NONE = ["NONE",0];
 Input.NONE.toString = $estr;
 Input.NONE.__enum__ = Input;
@@ -2010,7 +2070,7 @@ Snake.prototype = {
 	}
 	,__class__: Snake
 };
-var Direction = $hxClasses["Direction"] = { __ename__ : true, __constructs__ : ["UP","DOWN","LEFT","RIGHT"] };
+var Direction = $hxClasses["Direction"] = { __ename__ : ["Direction"], __constructs__ : ["UP","DOWN","LEFT","RIGHT"] };
 Direction.UP = ["UP",0];
 Direction.UP.toString = $estr;
 Direction.UP.__enum__ = Direction;
@@ -2040,6 +2100,9 @@ Std.parseInt = function(x) {
 	if(v == 0 && (HxOverrides.cca(x,1) == 120 || HxOverrides.cca(x,1) == 88)) v = parseInt(x);
 	if(isNaN(v)) return null;
 	return v;
+};
+Std.parseFloat = function(x) {
+	return parseFloat(x);
 };
 Std.random = function(x) {
 	if(x <= 0) return 0; else return Math.floor(Math.random() * x);
@@ -2202,32 +2265,30 @@ AppleTile.prototype = $extend(Tile.prototype,{
 	}
 	,__class__: AppleTile
 });
-var TileGrid = function(_width,_height,_main_sprite) {
-	this.width = _width;
-	this.height = _height;
-	this.main_sprite = _main_sprite;
+var TileGrid = function(_num_tiles_x,_num_tiles_y) {
+	openfl_display_Sprite.call(this);
+	this.num_tiles_x = _num_tiles_x;
+	this.num_tiles_y = _num_tiles_y;
 	this.grid_sprite = new openfl_display_Sprite();
 	this.create_grid_bitmap(null);
-	this.main_sprite.stage.addEventListener("resize",$bind(this,this.create_grid_bitmap));
-	this.main_sprite.stage.addEventListener("resize",$bind(this,this.redraw_apple));
-	this.main_sprite.addChild(this.grid_sprite);
+	this.addChild(this.grid_sprite);
 	var this1;
-	this1 = new Array(this.width);
+	this1 = new Array(this.num_tiles_x);
 	this.tiles = this1;
 	var _g1 = 0;
-	var _g = this.width;
+	var _g = this.num_tiles_x;
 	while(_g1 < _g) {
 		var x = _g1++;
 		var column;
 		var this2;
-		this2 = new Array(this.height);
+		this2 = new Array(this.num_tiles_y);
 		column = this2;
 		var _g3 = 0;
-		var _g2 = this.height;
+		var _g2 = this.num_tiles_y;
 		while(_g3 < _g2) {
 			var y = _g3++;
 			var t = new EmptyTile(x,y);
-			this.main_sprite.addChild(t);
+			this.addChild(t);
 			column[y] = t;
 		}
 		this.tiles[x] = column;
@@ -2235,26 +2296,26 @@ var TileGrid = function(_width,_height,_main_sprite) {
 };
 $hxClasses["TileGrid"] = TileGrid;
 TileGrid.__name__ = ["TileGrid"];
-TileGrid.prototype = {
-	width: null
-	,height: null
-	,main_sprite: null
+TileGrid.__super__ = openfl_display_Sprite;
+TileGrid.prototype = $extend(openfl_display_Sprite.prototype,{
+	num_tiles_x: null
+	,num_tiles_y: null
 	,apple_x: null
 	,apple_y: null
 	,grid_sprite: null
 	,grid: null
 	,tiles: null
 	,write: function(tile) {
-		this.main_sprite.removeChild(this.tiles[tile.tx][tile.ty]);
-		this.main_sprite.addChild(tile);
+		this.removeChild(this.tiles[tile.tx][tile.ty]);
+		this.addChild(tile);
 		this.tiles[tile.tx][tile.ty] = tile;
 	}
 	,read: function(x,y) {
 		return this.tiles[x][y];
 	}
 	,create_grid_bitmap: function(e) {
-		var w = Tile.tile_width * this.width + 1;
-		var h = Tile.tile_height * this.height + 1;
+		var w = Tile.tile_width * this.num_tiles_x + 1;
+		var h = Tile.tile_height * this.num_tiles_y + 1;
 		var gridData = new openfl_display_BitmapData(Util.round_up(w),Util.round_up(h),false,0);
 		var hLine = new openfl_geom_Rectangle(0,0,gridData.width,1);
 		var vLine = new openfl_geom_Rectangle(0,0,1,gridData.height);
@@ -2273,14 +2334,14 @@ TileGrid.prototype = {
 		this.grid_sprite.set_y(0);
 	}
 	,random_coords: function(s) {
-		var rand_index = Std.random(this.width * this.height - s.length);
+		var rand_index = Std.random(this.num_tiles_x * this.num_tiles_y - s.length);
 		var i = 0;
 		var _g1 = 0;
-		var _g = this.width;
+		var _g = this.num_tiles_x;
 		while(_g1 < _g) {
 			var x = _g1++;
 			var _g3 = 0;
-			var _g2 = this.height;
+			var _g2 = this.num_tiles_y;
 			while(_g3 < _g2) {
 				var y = _g3++;
 				if(!js_Boot.__instanceof(this.tiles[x][y],SnakeTile)) {
@@ -2303,7 +2364,31 @@ TileGrid.prototype = {
 		this.write(new_apple);
 	}
 	,__class__: TileGrid
-};
+});
+var ValueType = $hxClasses["ValueType"] = { __ename__ : ["ValueType"], __constructs__ : ["TNull","TInt","TFloat","TBool","TObject","TFunction","TClass","TEnum","TUnknown"] };
+ValueType.TNull = ["TNull",0];
+ValueType.TNull.toString = $estr;
+ValueType.TNull.__enum__ = ValueType;
+ValueType.TInt = ["TInt",1];
+ValueType.TInt.toString = $estr;
+ValueType.TInt.__enum__ = ValueType;
+ValueType.TFloat = ["TFloat",2];
+ValueType.TFloat.toString = $estr;
+ValueType.TFloat.__enum__ = ValueType;
+ValueType.TBool = ["TBool",3];
+ValueType.TBool.toString = $estr;
+ValueType.TBool.__enum__ = ValueType;
+ValueType.TObject = ["TObject",4];
+ValueType.TObject.toString = $estr;
+ValueType.TObject.__enum__ = ValueType;
+ValueType.TFunction = ["TFunction",5];
+ValueType.TFunction.toString = $estr;
+ValueType.TFunction.__enum__ = ValueType;
+ValueType.TClass = function(c) { var $x = ["TClass",6,c]; $x.__enum__ = ValueType; $x.toString = $estr; return $x; };
+ValueType.TEnum = function(e) { var $x = ["TEnum",7,e]; $x.__enum__ = ValueType; $x.toString = $estr; return $x; };
+ValueType.TUnknown = ["TUnknown",8];
+ValueType.TUnknown.toString = $estr;
+ValueType.TUnknown.__enum__ = ValueType;
 var Type = function() { };
 $hxClasses["Type"] = Type;
 Type.__name__ = ["Type"];
@@ -2316,6 +2401,10 @@ Type.getSuperClass = function(c) {
 Type.getClassName = function(c) {
 	var a = c.__name__;
 	if(a == null) return null;
+	return a.join(".");
+};
+Type.getEnumName = function(e) {
+	var a = e.__ename__;
 	return a.join(".");
 };
 Type.resolveClass = function(name) {
@@ -2354,12 +2443,56 @@ Type.createInstance = function(cl,args) {
 	}
 	return null;
 };
+Type.createEmptyInstance = function(cl) {
+	function empty() {}; empty.prototype = cl.prototype;
+	return new empty();
+};
+Type.createEnum = function(e,constr,params) {
+	var f = Reflect.field(e,constr);
+	if(f == null) throw new js__$Boot_HaxeError("No such constructor " + constr);
+	if(Reflect.isFunction(f)) {
+		if(params == null) throw new js__$Boot_HaxeError("Constructor " + constr + " need parameters");
+		return Reflect.callMethod(e,f,params);
+	}
+	if(params != null && params.length != 0) throw new js__$Boot_HaxeError("Constructor " + constr + " does not need parameters");
+	return f;
+};
 Type.getInstanceFields = function(c) {
 	var a = [];
 	for(var i in c.prototype) a.push(i);
 	HxOverrides.remove(a,"__class__");
 	HxOverrides.remove(a,"__properties__");
 	return a;
+};
+Type.getEnumConstructs = function(e) {
+	var a = e.__constructs__;
+	return a.slice();
+};
+Type["typeof"] = function(v) {
+	var _g = typeof(v);
+	switch(_g) {
+	case "boolean":
+		return ValueType.TBool;
+	case "string":
+		return ValueType.TClass(String);
+	case "number":
+		if(Math.ceil(v) == v % 2147483648.0) return ValueType.TInt;
+		return ValueType.TFloat;
+	case "object":
+		if(v == null) return ValueType.TNull;
+		var e = v.__enum__;
+		if(e != null) return ValueType.TEnum(e);
+		var c = js_Boot.getClass(v);
+		if(c != null) return ValueType.TClass(c);
+		return ValueType.TObject;
+	case "function":
+		if(v.__name__ || v.__ename__) return ValueType.TObject;
+		return ValueType.TFunction;
+	case "undefined":
+		return ValueType.TNull;
+	default:
+		return ValueType.TUnknown;
+	}
 };
 var _$UInt_UInt_$Impl_$ = {};
 $hxClasses["_UInt.UInt_Impl_"] = _$UInt_UInt_$Impl_$;
@@ -2389,7 +2522,7 @@ Util.modulo = function(n,d) {
 Util.round_up = function(n) {
 	return (n | 0) + 1;
 };
-var haxe_StackItem = $hxClasses["haxe.StackItem"] = { __ename__ : true, __constructs__ : ["CFunction","Module","FilePos","Method","LocalFunction"] };
+var haxe_StackItem = $hxClasses["haxe.StackItem"] = { __ename__ : ["haxe","StackItem"], __constructs__ : ["CFunction","Module","FilePos","Method","LocalFunction"] };
 haxe_StackItem.CFunction = ["CFunction",0];
 haxe_StackItem.CFunction.toString = $estr;
 haxe_StackItem.CFunction.__enum__ = haxe_StackItem;
@@ -2514,6 +2647,137 @@ haxe_CallStack.makeStack = function(s) {
 var haxe_IMap = function() { };
 $hxClasses["haxe.IMap"] = haxe_IMap;
 haxe_IMap.__name__ = ["haxe","IMap"];
+var haxe_Http = function(url) {
+	this.url = url;
+	this.headers = new List();
+	this.params = new List();
+	this.async = true;
+};
+$hxClasses["haxe.Http"] = haxe_Http;
+haxe_Http.__name__ = ["haxe","Http"];
+haxe_Http.prototype = {
+	url: null
+	,responseData: null
+	,async: null
+	,postData: null
+	,headers: null
+	,params: null
+	,setHeader: function(header,value) {
+		this.headers = Lambda.filter(this.headers,function(h) {
+			return h.header != header;
+		});
+		this.headers.push({ header : header, value : value});
+		return this;
+	}
+	,setParameter: function(param,value) {
+		this.params = Lambda.filter(this.params,function(p) {
+			return p.param != param;
+		});
+		this.params.push({ param : param, value : value});
+		return this;
+	}
+	,req: null
+	,request: function(post) {
+		var me = this;
+		me.responseData = null;
+		var r = this.req = js_Browser.createXMLHttpRequest();
+		var onreadystatechange = function(_) {
+			if(r.readyState != 4) return;
+			var s;
+			try {
+				s = r.status;
+			} catch( e ) {
+				haxe_CallStack.lastException = e;
+				if (e instanceof js__$Boot_HaxeError) e = e.val;
+				s = null;
+			}
+			if(s != null) {
+				var protocol = window.location.protocol.toLowerCase();
+				var rlocalProtocol = new EReg("^(?:about|app|app-storage|.+-extension|file|res|widget):$","");
+				var isLocal = rlocalProtocol.match(protocol);
+				if(isLocal) if(r.responseText != null) s = 200; else s = 404;
+			}
+			if(s == undefined) s = null;
+			if(s != null) me.onStatus(s);
+			if(s != null && s >= 200 && s < 400) {
+				me.req = null;
+				me.onData(me.responseData = r.responseText);
+			} else if(s == null) {
+				me.req = null;
+				me.onError("Failed to connect or resolve host");
+			} else switch(s) {
+			case 12029:
+				me.req = null;
+				me.onError("Failed to connect to host");
+				break;
+			case 12007:
+				me.req = null;
+				me.onError("Unknown host");
+				break;
+			default:
+				me.req = null;
+				me.responseData = r.responseText;
+				me.onError("Http Error #" + r.status);
+			}
+		};
+		if(this.async) r.onreadystatechange = onreadystatechange;
+		var uri = this.postData;
+		if(uri != null) post = true; else {
+			var _g_head = this.params.h;
+			var _g_val = null;
+			while(_g_head != null) {
+				var p;
+				p = (function($this) {
+					var $r;
+					_g_val = _g_head[0];
+					_g_head = _g_head[1];
+					$r = _g_val;
+					return $r;
+				}(this));
+				if(uri == null) uri = ""; else uri += "&";
+				uri += encodeURIComponent(p.param) + "=" + encodeURIComponent(p.value);
+			}
+		}
+		try {
+			if(post) r.open("POST",this.url,this.async); else if(uri != null) {
+				var question = this.url.split("?").length <= 1;
+				r.open("GET",this.url + (question?"?":"&") + uri,this.async);
+				uri = null;
+			} else r.open("GET",this.url,this.async);
+		} catch( e1 ) {
+			haxe_CallStack.lastException = e1;
+			if (e1 instanceof js__$Boot_HaxeError) e1 = e1.val;
+			me.req = null;
+			this.onError(e1.toString());
+			return;
+		}
+		if(!Lambda.exists(this.headers,function(h) {
+			return h.header == "Content-Type";
+		}) && post && this.postData == null) r.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
+		var _g_head1 = this.headers.h;
+		var _g_val1 = null;
+		while(_g_head1 != null) {
+			var h1;
+			h1 = (function($this) {
+				var $r;
+				_g_val1 = _g_head1[0];
+				_g_head1 = _g_head1[1];
+				$r = _g_val1;
+				return $r;
+			}(this));
+			r.setRequestHeader(h1.header,h1.value);
+		}
+		r.send(uri);
+		if(!this.async) onreadystatechange(null);
+	}
+	,onData: function(data) {
+	}
+	,onError: function(msg) {
+	}
+	,onStatus: function(status) {
+	}
+	,__class__: haxe_Http
+};
 var haxe__$Int64__$_$_$Int64 = function(high,low) {
 	this.high = high;
 	this.low = low;
@@ -2530,6 +2794,277 @@ $hxClasses["haxe.Log"] = haxe_Log;
 haxe_Log.__name__ = ["haxe","Log"];
 haxe_Log.trace = function(v,infos) {
 	js_Boot.__trace(v,infos);
+};
+var haxe_Serializer = function() {
+	this.buf = new StringBuf();
+	this.cache = [];
+	this.useCache = haxe_Serializer.USE_CACHE;
+	this.useEnumIndex = haxe_Serializer.USE_ENUM_INDEX;
+	this.shash = new haxe_ds_StringMap();
+	this.scount = 0;
+};
+$hxClasses["haxe.Serializer"] = haxe_Serializer;
+haxe_Serializer.__name__ = ["haxe","Serializer"];
+haxe_Serializer.prototype = {
+	buf: null
+	,cache: null
+	,shash: null
+	,scount: null
+	,useCache: null
+	,useEnumIndex: null
+	,toString: function() {
+		return this.buf.b;
+	}
+	,serializeString: function(s) {
+		var x = this.shash.get(s);
+		if(x != null) {
+			this.buf.b += "R";
+			if(x == null) this.buf.b += "null"; else this.buf.b += "" + x;
+			return;
+		}
+		this.shash.set(s,this.scount++);
+		this.buf.b += "y";
+		s = encodeURIComponent(s);
+		if(s.length == null) this.buf.b += "null"; else this.buf.b += "" + s.length;
+		this.buf.b += ":";
+		if(s == null) this.buf.b += "null"; else this.buf.b += "" + s;
+	}
+	,serializeRef: function(v) {
+		var vt = typeof(v);
+		var _g1 = 0;
+		var _g = this.cache.length;
+		while(_g1 < _g) {
+			var i = _g1++;
+			var ci = this.cache[i];
+			if(typeof(ci) == vt && ci == v) {
+				this.buf.b += "r";
+				if(i == null) this.buf.b += "null"; else this.buf.b += "" + i;
+				return true;
+			}
+		}
+		this.cache.push(v);
+		return false;
+	}
+	,serializeFields: function(v) {
+		var _g = 0;
+		var _g1 = Reflect.fields(v);
+		while(_g < _g1.length) {
+			var f = _g1[_g];
+			++_g;
+			this.serializeString(f);
+			this.serialize(Reflect.field(v,f));
+		}
+		this.buf.b += "g";
+	}
+	,serialize: function(v) {
+		{
+			var _g = Type["typeof"](v);
+			switch(_g[1]) {
+			case 0:
+				this.buf.b += "n";
+				break;
+			case 1:
+				var v1 = v;
+				if(v1 == 0) {
+					this.buf.b += "z";
+					return;
+				}
+				this.buf.b += "i";
+				if(v1 == null) this.buf.b += "null"; else this.buf.b += "" + v1;
+				break;
+			case 2:
+				var v2 = v;
+				if(isNaN(v2)) this.buf.b += "k"; else if(!isFinite(v2)) if(v2 < 0) this.buf.b += "m"; else this.buf.b += "p"; else {
+					this.buf.b += "d";
+					if(v2 == null) this.buf.b += "null"; else this.buf.b += "" + v2;
+				}
+				break;
+			case 3:
+				if(v) this.buf.b += "t"; else this.buf.b += "f";
+				break;
+			case 6:
+				var c = _g[2];
+				if(c == String) {
+					this.serializeString(v);
+					return;
+				}
+				if(this.useCache && this.serializeRef(v)) return;
+				switch(c) {
+				case Array:
+					var ucount = 0;
+					this.buf.b += "a";
+					var l = v.length;
+					var _g1 = 0;
+					while(_g1 < l) {
+						var i = _g1++;
+						if(v[i] == null) ucount++; else {
+							if(ucount > 0) {
+								if(ucount == 1) this.buf.b += "n"; else {
+									this.buf.b += "u";
+									if(ucount == null) this.buf.b += "null"; else this.buf.b += "" + ucount;
+								}
+								ucount = 0;
+							}
+							this.serialize(v[i]);
+						}
+					}
+					if(ucount > 0) {
+						if(ucount == 1) this.buf.b += "n"; else {
+							this.buf.b += "u";
+							if(ucount == null) this.buf.b += "null"; else this.buf.b += "" + ucount;
+						}
+					}
+					this.buf.b += "h";
+					break;
+				case List:
+					this.buf.b += "l";
+					var v3 = v;
+					var _g1_head = v3.h;
+					var _g1_val = null;
+					while(_g1_head != null) {
+						var i1;
+						_g1_val = _g1_head[0];
+						_g1_head = _g1_head[1];
+						i1 = _g1_val;
+						this.serialize(i1);
+					}
+					this.buf.b += "h";
+					break;
+				case Date:
+					var d = v;
+					this.buf.b += "v";
+					this.buf.add(d.getTime());
+					break;
+				case haxe_ds_StringMap:
+					this.buf.b += "b";
+					var v4 = v;
+					var $it0 = v4.keys();
+					while( $it0.hasNext() ) {
+						var k = $it0.next();
+						this.serializeString(k);
+						this.serialize(__map_reserved[k] != null?v4.getReserved(k):v4.h[k]);
+					}
+					this.buf.b += "h";
+					break;
+				case haxe_ds_IntMap:
+					this.buf.b += "q";
+					var v5 = v;
+					var $it1 = v5.keys();
+					while( $it1.hasNext() ) {
+						var k1 = $it1.next();
+						this.buf.b += ":";
+						if(k1 == null) this.buf.b += "null"; else this.buf.b += "" + k1;
+						this.serialize(v5.h[k1]);
+					}
+					this.buf.b += "h";
+					break;
+				case haxe_ds_ObjectMap:
+					this.buf.b += "M";
+					var v6 = v;
+					var $it2 = v6.keys();
+					while( $it2.hasNext() ) {
+						var k2 = $it2.next();
+						var id = Reflect.field(k2,"__id__");
+						Reflect.deleteField(k2,"__id__");
+						this.serialize(k2);
+						k2.__id__ = id;
+						this.serialize(v6.h[k2.__id__]);
+					}
+					this.buf.b += "h";
+					break;
+				case haxe_io_Bytes:
+					var v7 = v;
+					var i2 = 0;
+					var max = v7.length - 2;
+					var charsBuf = new StringBuf();
+					var b64 = haxe_Serializer.BASE64;
+					while(i2 < max) {
+						var b1 = v7.get(i2++);
+						var b2 = v7.get(i2++);
+						var b3 = v7.get(i2++);
+						charsBuf.add(b64.charAt(b1 >> 2));
+						charsBuf.add(b64.charAt((b1 << 4 | b2 >> 4) & 63));
+						charsBuf.add(b64.charAt((b2 << 2 | b3 >> 6) & 63));
+						charsBuf.add(b64.charAt(b3 & 63));
+					}
+					if(i2 == max) {
+						var b11 = v7.get(i2++);
+						var b21 = v7.get(i2++);
+						charsBuf.add(b64.charAt(b11 >> 2));
+						charsBuf.add(b64.charAt((b11 << 4 | b21 >> 4) & 63));
+						charsBuf.add(b64.charAt(b21 << 2 & 63));
+					} else if(i2 == max + 1) {
+						var b12 = v7.get(i2++);
+						charsBuf.add(b64.charAt(b12 >> 2));
+						charsBuf.add(b64.charAt(b12 << 4 & 63));
+					}
+					var chars = charsBuf.b;
+					this.buf.b += "s";
+					if(chars.length == null) this.buf.b += "null"; else this.buf.b += "" + chars.length;
+					this.buf.b += ":";
+					if(chars == null) this.buf.b += "null"; else this.buf.b += "" + chars;
+					break;
+				default:
+					if(this.useCache) this.cache.pop();
+					if(v.hxSerialize != null) {
+						this.buf.b += "C";
+						this.serializeString(Type.getClassName(c));
+						if(this.useCache) this.cache.push(v);
+						v.hxSerialize(this);
+						this.buf.b += "g";
+					} else {
+						this.buf.b += "c";
+						this.serializeString(Type.getClassName(c));
+						if(this.useCache) this.cache.push(v);
+						this.serializeFields(v);
+					}
+				}
+				break;
+			case 4:
+				if(js_Boot.__instanceof(v,Class)) {
+					var className = Type.getClassName(v);
+					this.buf.b += "A";
+					this.serializeString(className);
+				} else if(js_Boot.__instanceof(v,Enum)) {
+					this.buf.b += "B";
+					this.serializeString(Type.getEnumName(v));
+				} else {
+					if(this.useCache && this.serializeRef(v)) return;
+					this.buf.b += "o";
+					this.serializeFields(v);
+				}
+				break;
+			case 7:
+				var e = _g[2];
+				if(this.useCache) {
+					if(this.serializeRef(v)) return;
+					this.cache.pop();
+				}
+				if(this.useEnumIndex) this.buf.b += "j"; else this.buf.b += "w";
+				this.serializeString(Type.getEnumName(e));
+				if(this.useEnumIndex) {
+					this.buf.b += ":";
+					this.buf.b += Std.string(v[1]);
+				} else this.serializeString(v[0]);
+				this.buf.b += ":";
+				var l1 = v.length;
+				this.buf.b += Std.string(l1 - 2);
+				var _g11 = 2;
+				while(_g11 < l1) {
+					var i3 = _g11++;
+					this.serialize(v[i3]);
+				}
+				if(this.useCache) this.cache.push(v);
+				break;
+			case 5:
+				throw new js__$Boot_HaxeError("Cannot serialize function");
+				break;
+			default:
+				throw new js__$Boot_HaxeError("Cannot serialize " + Std.string(v));
+			}
+		}
+	}
+	,__class__: haxe_Serializer
 };
 var haxe_Timer = function(time_ms) {
 	var me = this;
@@ -2566,6 +3101,299 @@ haxe_Timer.prototype = {
 	,run: function() {
 	}
 	,__class__: haxe_Timer
+};
+var haxe_Unserializer = function(buf) {
+	this.buf = buf;
+	this.length = buf.length;
+	this.pos = 0;
+	this.scache = [];
+	this.cache = [];
+	var r = haxe_Unserializer.DEFAULT_RESOLVER;
+	if(r == null) {
+		r = Type;
+		haxe_Unserializer.DEFAULT_RESOLVER = r;
+	}
+	this.setResolver(r);
+};
+$hxClasses["haxe.Unserializer"] = haxe_Unserializer;
+haxe_Unserializer.__name__ = ["haxe","Unserializer"];
+haxe_Unserializer.initCodes = function() {
+	var codes = [];
+	var _g1 = 0;
+	var _g = haxe_Unserializer.BASE64.length;
+	while(_g1 < _g) {
+		var i = _g1++;
+		codes[haxe_Unserializer.BASE64.charCodeAt(i)] = i;
+	}
+	return codes;
+};
+haxe_Unserializer.prototype = {
+	buf: null
+	,pos: null
+	,length: null
+	,cache: null
+	,scache: null
+	,resolver: null
+	,setResolver: function(r) {
+		if(r == null) this.resolver = { resolveClass : function(_) {
+			return null;
+		}, resolveEnum : function(_1) {
+			return null;
+		}}; else this.resolver = r;
+	}
+	,get: function(p) {
+		return this.buf.charCodeAt(p);
+	}
+	,readDigits: function() {
+		var k = 0;
+		var s = false;
+		var fpos = this.pos;
+		while(true) {
+			var c = this.buf.charCodeAt(this.pos);
+			if(c != c) break;
+			if(c == 45) {
+				if(this.pos != fpos) break;
+				s = true;
+				this.pos++;
+				continue;
+			}
+			if(c < 48 || c > 57) break;
+			k = k * 10 + (c - 48);
+			this.pos++;
+		}
+		if(s) k *= -1;
+		return k;
+	}
+	,readFloat: function() {
+		var p1 = this.pos;
+		while(true) {
+			var c = this.buf.charCodeAt(this.pos);
+			if(c >= 43 && c < 58 || c == 101 || c == 69) this.pos++; else break;
+		}
+		return Std.parseFloat(HxOverrides.substr(this.buf,p1,this.pos - p1));
+	}
+	,unserializeObject: function(o) {
+		while(true) {
+			if(this.pos >= this.length) throw new js__$Boot_HaxeError("Invalid object");
+			if(this.buf.charCodeAt(this.pos) == 103) break;
+			var k = this.unserialize();
+			if(!(typeof(k) == "string")) throw new js__$Boot_HaxeError("Invalid object key");
+			var v = this.unserialize();
+			o[k] = v;
+		}
+		this.pos++;
+	}
+	,unserializeEnum: function(edecl,tag) {
+		if(this.get(this.pos++) != 58) throw new js__$Boot_HaxeError("Invalid enum format");
+		var nargs = this.readDigits();
+		if(nargs == 0) return Type.createEnum(edecl,tag);
+		var args = [];
+		while(nargs-- > 0) args.push(this.unserialize());
+		return Type.createEnum(edecl,tag,args);
+	}
+	,unserialize: function() {
+		var _g = this.get(this.pos++);
+		switch(_g) {
+		case 110:
+			return null;
+		case 116:
+			return true;
+		case 102:
+			return false;
+		case 122:
+			return 0;
+		case 105:
+			return this.readDigits();
+		case 100:
+			return this.readFloat();
+		case 121:
+			var len = this.readDigits();
+			if(this.get(this.pos++) != 58 || this.length - this.pos < len) throw new js__$Boot_HaxeError("Invalid string length");
+			var s = HxOverrides.substr(this.buf,this.pos,len);
+			this.pos += len;
+			s = decodeURIComponent(s.split("+").join(" "));
+			this.scache.push(s);
+			return s;
+		case 107:
+			return NaN;
+		case 109:
+			return -Infinity;
+		case 112:
+			return Infinity;
+		case 97:
+			var buf = this.buf;
+			var a = [];
+			this.cache.push(a);
+			while(true) {
+				var c = this.buf.charCodeAt(this.pos);
+				if(c == 104) {
+					this.pos++;
+					break;
+				}
+				if(c == 117) {
+					this.pos++;
+					var n = this.readDigits();
+					a[a.length + n - 1] = null;
+				} else a.push(this.unserialize());
+			}
+			return a;
+		case 111:
+			var o = { };
+			this.cache.push(o);
+			this.unserializeObject(o);
+			return o;
+		case 114:
+			var n1 = this.readDigits();
+			if(n1 < 0 || n1 >= this.cache.length) throw new js__$Boot_HaxeError("Invalid reference");
+			return this.cache[n1];
+		case 82:
+			var n2 = this.readDigits();
+			if(n2 < 0 || n2 >= this.scache.length) throw new js__$Boot_HaxeError("Invalid string reference");
+			return this.scache[n2];
+		case 120:
+			throw new js__$Boot_HaxeError(this.unserialize());
+			break;
+		case 99:
+			var name = this.unserialize();
+			var cl = this.resolver.resolveClass(name);
+			if(cl == null) throw new js__$Boot_HaxeError("Class not found " + name);
+			var o1 = Type.createEmptyInstance(cl);
+			this.cache.push(o1);
+			this.unserializeObject(o1);
+			return o1;
+		case 119:
+			var name1 = this.unserialize();
+			var edecl = this.resolver.resolveEnum(name1);
+			if(edecl == null) throw new js__$Boot_HaxeError("Enum not found " + name1);
+			var e = this.unserializeEnum(edecl,this.unserialize());
+			this.cache.push(e);
+			return e;
+		case 106:
+			var name2 = this.unserialize();
+			var edecl1 = this.resolver.resolveEnum(name2);
+			if(edecl1 == null) throw new js__$Boot_HaxeError("Enum not found " + name2);
+			this.pos++;
+			var index = this.readDigits();
+			var tag = Type.getEnumConstructs(edecl1)[index];
+			if(tag == null) throw new js__$Boot_HaxeError("Unknown enum index " + name2 + "@" + index);
+			var e1 = this.unserializeEnum(edecl1,tag);
+			this.cache.push(e1);
+			return e1;
+		case 108:
+			var l = new List();
+			this.cache.push(l);
+			var buf1 = this.buf;
+			while(this.buf.charCodeAt(this.pos) != 104) l.add(this.unserialize());
+			this.pos++;
+			return l;
+		case 98:
+			var h = new haxe_ds_StringMap();
+			this.cache.push(h);
+			var buf2 = this.buf;
+			while(this.buf.charCodeAt(this.pos) != 104) {
+				var s1 = this.unserialize();
+				h.set(s1,this.unserialize());
+			}
+			this.pos++;
+			return h;
+		case 113:
+			var h1 = new haxe_ds_IntMap();
+			this.cache.push(h1);
+			var buf3 = this.buf;
+			var c1 = this.get(this.pos++);
+			while(c1 == 58) {
+				var i = this.readDigits();
+				h1.set(i,this.unserialize());
+				c1 = this.get(this.pos++);
+			}
+			if(c1 != 104) throw new js__$Boot_HaxeError("Invalid IntMap format");
+			return h1;
+		case 77:
+			var h2 = new haxe_ds_ObjectMap();
+			this.cache.push(h2);
+			var buf4 = this.buf;
+			while(this.buf.charCodeAt(this.pos) != 104) {
+				var s2 = this.unserialize();
+				h2.set(s2,this.unserialize());
+			}
+			this.pos++;
+			return h2;
+		case 118:
+			var d;
+			if(this.buf.charCodeAt(this.pos) >= 48 && this.buf.charCodeAt(this.pos) <= 57 && this.buf.charCodeAt(this.pos + 1) >= 48 && this.buf.charCodeAt(this.pos + 1) <= 57 && this.buf.charCodeAt(this.pos + 2) >= 48 && this.buf.charCodeAt(this.pos + 2) <= 57 && this.buf.charCodeAt(this.pos + 3) >= 48 && this.buf.charCodeAt(this.pos + 3) <= 57 && this.buf.charCodeAt(this.pos + 4) == 45) {
+				var s3 = HxOverrides.substr(this.buf,this.pos,19);
+				d = HxOverrides.strDate(s3);
+				this.pos += 19;
+			} else {
+				var t = this.readFloat();
+				var d1 = new Date();
+				d1.setTime(t);
+				d = d1;
+			}
+			this.cache.push(d);
+			return d;
+		case 115:
+			var len1 = this.readDigits();
+			var buf5 = this.buf;
+			if(this.get(this.pos++) != 58 || this.length - this.pos < len1) throw new js__$Boot_HaxeError("Invalid bytes length");
+			var codes = haxe_Unserializer.CODES;
+			if(codes == null) {
+				codes = haxe_Unserializer.initCodes();
+				haxe_Unserializer.CODES = codes;
+			}
+			var i1 = this.pos;
+			var rest = len1 & 3;
+			var size;
+			size = (len1 >> 2) * 3 + (rest >= 2?rest - 1:0);
+			var max = i1 + (len1 - rest);
+			var bytes = haxe_io_Bytes.alloc(size);
+			var bpos = 0;
+			while(i1 < max) {
+				var c11 = codes[StringTools.fastCodeAt(buf5,i1++)];
+				var c2 = codes[StringTools.fastCodeAt(buf5,i1++)];
+				bytes.set(bpos++,c11 << 2 | c2 >> 4);
+				var c3 = codes[StringTools.fastCodeAt(buf5,i1++)];
+				bytes.set(bpos++,c2 << 4 | c3 >> 2);
+				var c4 = codes[StringTools.fastCodeAt(buf5,i1++)];
+				bytes.set(bpos++,c3 << 6 | c4);
+			}
+			if(rest >= 2) {
+				var c12 = codes[StringTools.fastCodeAt(buf5,i1++)];
+				var c21 = codes[StringTools.fastCodeAt(buf5,i1++)];
+				bytes.set(bpos++,c12 << 2 | c21 >> 4);
+				if(rest == 3) {
+					var c31 = codes[StringTools.fastCodeAt(buf5,i1++)];
+					bytes.set(bpos++,c21 << 4 | c31 >> 2);
+				}
+			}
+			this.pos += len1;
+			this.cache.push(bytes);
+			return bytes;
+		case 67:
+			var name3 = this.unserialize();
+			var cl1 = this.resolver.resolveClass(name3);
+			if(cl1 == null) throw new js__$Boot_HaxeError("Class not found " + name3);
+			var o2 = Type.createEmptyInstance(cl1);
+			this.cache.push(o2);
+			o2.hxUnserialize(this);
+			if(this.get(this.pos++) != 103) throw new js__$Boot_HaxeError("Invalid custom data");
+			return o2;
+		case 65:
+			var name4 = this.unserialize();
+			var cl2 = this.resolver.resolveClass(name4);
+			if(cl2 == null) throw new js__$Boot_HaxeError("Class not found " + name4);
+			return cl2;
+		case 66:
+			var name5 = this.unserialize();
+			var e2 = this.resolver.resolveEnum(name5);
+			if(e2 == null) throw new js__$Boot_HaxeError("Enum not found " + name5);
+			return e2;
+		default:
+		}
+		this.pos--;
+		throw new js__$Boot_HaxeError("Invalid char " + this.buf.charAt(this.pos) + " at position " + this.pos);
+	}
+	,__class__: haxe_Unserializer
 };
 var haxe_crypto_BaseCode = function(base) {
 	var len = base.length;
@@ -2612,6 +3440,9 @@ haxe_ds_IntMap.__name__ = ["haxe","ds","IntMap"];
 haxe_ds_IntMap.__interfaces__ = [haxe_IMap];
 haxe_ds_IntMap.prototype = {
 	h: null
+	,set: function(key,value) {
+		this.h[key] = value;
+	}
 	,remove: function(key) {
 		if(!this.h.hasOwnProperty(key)) return false;
 		delete(this.h[key]);
@@ -2654,6 +3485,13 @@ haxe_ds_ObjectMap.prototype = {
 		delete(this.h[id]);
 		delete(this.h.__keys__[id]);
 		return true;
+	}
+	,keys: function() {
+		var a = [];
+		for( var key in this.h.__keys__ ) {
+		if(this.h.hasOwnProperty(key)) a.push(this.h.__keys__[key]);
+		}
+		return HxOverrides.iter(a);
 	}
 	,__class__: haxe_ds_ObjectMap
 };
@@ -2842,7 +3680,7 @@ haxe_io_Eof.prototype = {
 	}
 	,__class__: haxe_io_Eof
 };
-var haxe_io_Error = $hxClasses["haxe.io.Error"] = { __ename__ : true, __constructs__ : ["Blocked","Overflow","OutsideBounds","Custom"] };
+var haxe_io_Error = $hxClasses["haxe.io.Error"] = { __ename__ : ["haxe","io","Error"], __constructs__ : ["Blocked","Overflow","OutsideBounds","Custom"] };
 haxe_io_Error.Blocked = ["Blocked",0];
 haxe_io_Error.Blocked.toString = $estr;
 haxe_io_Error.Blocked.__enum__ = haxe_io_Error;
@@ -2957,6 +3795,66 @@ haxe_io_Path.prototype = {
 		return (this.dir == null?"":this.dir + (this.backslash?"\\":"/")) + this.file + (this.ext == null?"":"." + this.ext);
 	}
 	,__class__: haxe_io_Path
+};
+var haxe_remoting_AsyncConnection = function() { };
+$hxClasses["haxe.remoting.AsyncConnection"] = haxe_remoting_AsyncConnection;
+haxe_remoting_AsyncConnection.__name__ = ["haxe","remoting","AsyncConnection"];
+haxe_remoting_AsyncConnection.prototype = {
+	resolve: null
+	,call: null
+	,__class__: haxe_remoting_AsyncConnection
+};
+var haxe_remoting_HttpAsyncConnection = function(data,path) {
+	this.__data = data;
+	this.__path = path;
+};
+$hxClasses["haxe.remoting.HttpAsyncConnection"] = haxe_remoting_HttpAsyncConnection;
+haxe_remoting_HttpAsyncConnection.__name__ = ["haxe","remoting","HttpAsyncConnection"];
+haxe_remoting_HttpAsyncConnection.__interfaces__ = [haxe_remoting_AsyncConnection];
+haxe_remoting_HttpAsyncConnection.urlConnect = function(url) {
+	return new haxe_remoting_HttpAsyncConnection({ url : url, error : function(e) {
+		throw new js__$Boot_HaxeError(e);
+	}},[]);
+};
+haxe_remoting_HttpAsyncConnection.prototype = {
+	__data: null
+	,__path: null
+	,resolve: function(name) {
+		var c = new haxe_remoting_HttpAsyncConnection(this.__data,this.__path.slice());
+		c.__path.push(name);
+		return c;
+	}
+	,setErrorHandler: function(h) {
+		this.__data.error = h;
+	}
+	,call: function(params,onResult) {
+		var h = new haxe_Http(this.__data.url);
+		var s = new haxe_Serializer();
+		s.serialize(this.__path);
+		s.serialize(params);
+		h.setHeader("X-Haxe-Remoting","1");
+		h.setParameter("__x",s.toString());
+		var error = this.__data.error;
+		h.onData = function(response) {
+			var ok = true;
+			var ret;
+			try {
+				if(HxOverrides.substr(response,0,3) != "hxr") throw new js__$Boot_HaxeError("Invalid response : '" + response + "'");
+				var s1 = new haxe_Unserializer(HxOverrides.substr(response,3,null));
+				ret = s1.unserialize();
+			} catch( err ) {
+				haxe_CallStack.lastException = err;
+				if (err instanceof js__$Boot_HaxeError) err = err.val;
+				ret = null;
+				ok = false;
+				error(err);
+			}
+			if(ok && onResult != null) onResult(ret);
+		};
+		h.onError = error;
+		h.request(true);
+	}
+	,__class__: haxe_remoting_HttpAsyncConnection
 };
 var js__$Boot_HaxeError = function(val) {
 	Error.call(this);
@@ -3132,6 +4030,11 @@ js_Boot.__resolveNativeClass = function(name) {
 var js_Browser = function() { };
 $hxClasses["js.Browser"] = js_Browser;
 js_Browser.__name__ = ["js","Browser"];
+js_Browser.createXMLHttpRequest = function() {
+	if(typeof XMLHttpRequest != "undefined") return new XMLHttpRequest();
+	if(typeof ActiveXObject != "undefined") return new ActiveXObject("Microsoft.XMLHTTP");
+	throw new js__$Boot_HaxeError("Unable to create XMLHttpRequest object.");
+};
 js_Browser.alert = function(v) {
 	window.alert(js_Boot.__string_rec(v,""));
 };
@@ -3344,7 +4247,7 @@ var lime_AssetCache = function() {
 	this.audio = new haxe_ds_StringMap();
 	this.font = new haxe_ds_StringMap();
 	this.image = new haxe_ds_StringMap();
-	this.version = 294091;
+	this.version = 548885;
 };
 $hxClasses["lime.AssetCache"] = lime_AssetCache;
 lime_AssetCache.__name__ = ["lime","AssetCache"];
@@ -7260,7 +8163,7 @@ lime_audio_AudioBuffer.prototype = {
 	,__class__: lime_audio_AudioBuffer
 	,__properties__: {set_src:"set_src",get_src:"get_src"}
 };
-var lime_audio_AudioContext = $hxClasses["lime.audio.AudioContext"] = { __ename__ : true, __constructs__ : ["OPENAL","HTML5","WEB","FLASH","CUSTOM"] };
+var lime_audio_AudioContext = $hxClasses["lime.audio.AudioContext"] = { __ename__ : ["lime","audio","AudioContext"], __constructs__ : ["OPENAL","HTML5","WEB","FLASH","CUSTOM"] };
 lime_audio_AudioContext.OPENAL = function(alc,al) { var $x = ["OPENAL",0,alc,al]; $x.__enum__ = lime_audio_AudioContext; $x.toString = $estr; return $x; };
 lime_audio_AudioContext.HTML5 = function(context) { var $x = ["HTML5",1,context]; $x.__enum__ = lime_audio_AudioContext; $x.toString = $estr; return $x; };
 lime_audio_AudioContext.WEB = function(context) { var $x = ["WEB",2,context]; $x.__enum__ = lime_audio_AudioContext; $x.toString = $estr; return $x; };
@@ -9067,7 +9970,7 @@ lime_graphics_ImageBuffer.prototype = {
 	,__class__: lime_graphics_ImageBuffer
 	,__properties__: {get_stride:"get_stride",set_src:"set_src",get_src:"get_src"}
 };
-var lime_graphics_ImageChannel = $hxClasses["lime.graphics.ImageChannel"] = { __ename__ : true, __constructs__ : ["RED","GREEN","BLUE","ALPHA"] };
+var lime_graphics_ImageChannel = $hxClasses["lime.graphics.ImageChannel"] = { __ename__ : ["lime","graphics","ImageChannel"], __constructs__ : ["RED","GREEN","BLUE","ALPHA"] };
 lime_graphics_ImageChannel.RED = ["RED",0];
 lime_graphics_ImageChannel.RED.toString = $estr;
 lime_graphics_ImageChannel.RED.__enum__ = lime_graphics_ImageChannel;
@@ -9080,7 +9983,7 @@ lime_graphics_ImageChannel.BLUE.__enum__ = lime_graphics_ImageChannel;
 lime_graphics_ImageChannel.ALPHA = ["ALPHA",3];
 lime_graphics_ImageChannel.ALPHA.toString = $estr;
 lime_graphics_ImageChannel.ALPHA.__enum__ = lime_graphics_ImageChannel;
-var lime_graphics_ImageType = $hxClasses["lime.graphics.ImageType"] = { __ename__ : true, __constructs__ : ["CANVAS","DATA","FLASH","CUSTOM"] };
+var lime_graphics_ImageType = $hxClasses["lime.graphics.ImageType"] = { __ename__ : ["lime","graphics","ImageType"], __constructs__ : ["CANVAS","DATA","FLASH","CUSTOM"] };
 lime_graphics_ImageType.CANVAS = ["CANVAS",0];
 lime_graphics_ImageType.CANVAS.toString = $estr;
 lime_graphics_ImageType.CANVAS.__enum__ = lime_graphics_ImageType;
@@ -9093,7 +9996,7 @@ lime_graphics_ImageType.FLASH.__enum__ = lime_graphics_ImageType;
 lime_graphics_ImageType.CUSTOM = ["CUSTOM",3];
 lime_graphics_ImageType.CUSTOM.toString = $estr;
 lime_graphics_ImageType.CUSTOM.__enum__ = lime_graphics_ImageType;
-var lime_graphics_RenderContext = $hxClasses["lime.graphics.RenderContext"] = { __ename__ : true, __constructs__ : ["OPENGL","CANVAS","DOM","FLASH","CAIRO","CONSOLE","CUSTOM","NONE"] };
+var lime_graphics_RenderContext = $hxClasses["lime.graphics.RenderContext"] = { __ename__ : ["lime","graphics","RenderContext"], __constructs__ : ["OPENGL","CANVAS","DOM","FLASH","CAIRO","CONSOLE","CUSTOM","NONE"] };
 lime_graphics_RenderContext.OPENGL = function(gl) { var $x = ["OPENGL",0,gl]; $x.__enum__ = lime_graphics_RenderContext; $x.toString = $estr; return $x; };
 lime_graphics_RenderContext.CANVAS = function(context) { var $x = ["CANVAS",1,context]; $x.__enum__ = lime_graphics_RenderContext; $x.toString = $estr; return $x; };
 lime_graphics_RenderContext.DOM = function(element) { var $x = ["DOM",2,element]; $x.__enum__ = lime_graphics_RenderContext; $x.toString = $estr; return $x; };
@@ -9136,7 +10039,7 @@ lime_graphics_Renderer.prototype = {
 	}
 	,__class__: lime_graphics_Renderer
 };
-var lime_graphics_RendererType = $hxClasses["lime.graphics.RendererType"] = { __ename__ : true, __constructs__ : ["OPENGL","CANVAS","DOM","FLASH","CAIRO","CONSOLE","CUSTOM"] };
+var lime_graphics_RendererType = $hxClasses["lime.graphics.RendererType"] = { __ename__ : ["lime","graphics","RendererType"], __constructs__ : ["OPENGL","CANVAS","DOM","FLASH","CAIRO","CONSOLE","CUSTOM"] };
 lime_graphics_RendererType.OPENGL = ["OPENGL",0];
 lime_graphics_RendererType.OPENGL.toString = $estr;
 lime_graphics_RendererType.OPENGL.__enum__ = lime_graphics_RendererType;
@@ -9525,7 +10428,7 @@ lime_graphics_console_IndexBuffer.__name__ = ["lime","graphics","console","Index
 lime_graphics_console_IndexBuffer.prototype = {
 	__class__: lime_graphics_console_IndexBuffer
 };
-var lime_graphics_console_Primitive = $hxClasses["lime.graphics.console.Primitive"] = { __ename__ : true, __constructs__ : ["Point","Line","LineStrip","Triangle","TriangleStrip"] };
+var lime_graphics_console_Primitive = $hxClasses["lime.graphics.console.Primitive"] = { __ename__ : ["lime","graphics","console","Primitive"], __constructs__ : ["Point","Line","LineStrip","Triangle","TriangleStrip"] };
 lime_graphics_console_Primitive.Point = ["Point",0];
 lime_graphics_console_Primitive.Point.toString = $estr;
 lime_graphics_console_Primitive.Point.__enum__ = lime_graphics_console_Primitive;
@@ -9739,7 +10642,7 @@ lime_graphics_format_BMP.encode = function(image,type) {
 	}
 	return data;
 };
-var lime_graphics_format_BMPType = $hxClasses["lime.graphics.format.BMPType"] = { __ename__ : true, __constructs__ : ["RGB","BITFIELD","ICO"] };
+var lime_graphics_format_BMPType = $hxClasses["lime.graphics.format.BMPType"] = { __ename__ : ["lime","graphics","format","BMPType"], __constructs__ : ["RGB","BITFIELD","ICO"] };
 lime_graphics_format_BMPType.RGB = ["RGB",0];
 lime_graphics_format_BMPType.RGB.toString = $estr;
 lime_graphics_format_BMPType.RGB.__enum__ = lime_graphics_format_BMPType;
@@ -14538,7 +15441,7 @@ lime_system_DisplayMode.prototype = {
 	,width: null
 	,__class__: lime_system_DisplayMode
 };
-var lime_system_Endian = $hxClasses["lime.system.Endian"] = { __ename__ : true, __constructs__ : ["LITTLE_ENDIAN","BIG_ENDIAN"] };
+var lime_system_Endian = $hxClasses["lime.system.Endian"] = { __ename__ : ["lime","system","Endian"], __constructs__ : ["LITTLE_ENDIAN","BIG_ENDIAN"] };
 lime_system_Endian.LITTLE_ENDIAN = ["LITTLE_ENDIAN",0];
 lime_system_Endian.LITTLE_ENDIAN.toString = $estr;
 lime_system_Endian.LITTLE_ENDIAN.__enum__ = lime_system_Endian;
@@ -14640,7 +15543,7 @@ lime_system_ThreadPool.prototype = {
 	}
 	,__class__: lime_system_ThreadPool
 };
-var lime_system__$ThreadPool_ThreadPoolMessageType = $hxClasses["lime.system._ThreadPool.ThreadPoolMessageType"] = { __ename__ : true, __constructs__ : ["COMPLETE","ERROR","EXIT","PROGRESS","WORK"] };
+var lime_system__$ThreadPool_ThreadPoolMessageType = $hxClasses["lime.system._ThreadPool.ThreadPoolMessageType"] = { __ename__ : ["lime","system","_ThreadPool","ThreadPoolMessageType"], __constructs__ : ["COMPLETE","ERROR","EXIT","PROGRESS","WORK"] };
 lime_system__$ThreadPool_ThreadPoolMessageType.COMPLETE = ["COMPLETE",0];
 lime_system__$ThreadPool_ThreadPoolMessageType.COMPLETE.toString = $estr;
 lime_system__$ThreadPool_ThreadPoolMessageType.COMPLETE.__enum__ = lime_system__$ThreadPool_ThreadPoolMessageType;
@@ -15216,7 +16119,7 @@ lime_ui_Mouse.get_lock = function() {
 lime_ui_Mouse.set_lock = function(value) {
 	return lime__$backend_html5_HTML5Mouse.set_lock(value);
 };
-var lime_ui_MouseCursor = $hxClasses["lime.ui.MouseCursor"] = { __ename__ : true, __constructs__ : ["ARROW","CROSSHAIR","DEFAULT","MOVE","POINTER","RESIZE_NESW","RESIZE_NS","RESIZE_NWSE","RESIZE_WE","TEXT","WAIT","WAIT_ARROW","CUSTOM"] };
+var lime_ui_MouseCursor = $hxClasses["lime.ui.MouseCursor"] = { __ename__ : ["lime","ui","MouseCursor"], __constructs__ : ["ARROW","CROSSHAIR","DEFAULT","MOVE","POINTER","RESIZE_NESW","RESIZE_NS","RESIZE_NWSE","RESIZE_WE","TEXT","WAIT","WAIT_ARROW","CUSTOM"] };
 lime_ui_MouseCursor.ARROW = ["ARROW",0];
 lime_ui_MouseCursor.ARROW.toString = $estr;
 lime_ui_MouseCursor.ARROW.__enum__ = lime_ui_MouseCursor;
@@ -15480,7 +16383,7 @@ lime_ui_Window.prototype = {
 	,__class__: lime_ui_Window
 	,__properties__: {set_y:"set_y",get_y:"get_y",set_x:"set_x",get_x:"get_x",set_width:"set_width",get_width:"get_width",set_title:"set_title",get_title:"get_title",get_scale:"get_scale",set_resizable:"set_resizable",get_resizable:"get_resizable",set_minimized:"set_minimized",get_minimized:"get_minimized",set_maximized:"set_maximized",get_maximized:"get_maximized",set_height:"set_height",get_height:"get_height",set_fullscreen:"set_fullscreen",get_fullscreen:"get_fullscreen",set_enableTextEvents:"set_enableTextEvents",get_enableTextEvents:"get_enableTextEvents",get_display:"get_display",set_borderless:"set_borderless",get_borderless:"get_borderless"}
 };
-var lime_utils_TAError = $hxClasses["lime.utils.TAError"] = { __ename__ : true, __constructs__ : ["RangeError"] };
+var lime_utils_TAError = $hxClasses["lime.utils.TAError"] = { __ename__ : ["lime","utils","TAError"], __constructs__ : ["RangeError"] };
 lime_utils_TAError.RangeError = ["RangeError",0];
 lime_utils_TAError.RangeError.toString = $estr;
 lime_utils_TAError.RangeError.__enum__ = lime_utils_TAError;
@@ -17801,7 +18704,7 @@ openfl__$internal_renderer__$DrawCommandReader_OverrideMatrixView_$Impl_$._new =
 openfl__$internal_renderer__$DrawCommandReader_OverrideMatrixView_$Impl_$.get_matrix = function(this1) {
 	return this1.obj(0);
 };
-var openfl__$internal_renderer_DrawCommandType = $hxClasses["openfl._internal.renderer.DrawCommandType"] = { __ename__ : true, __constructs__ : ["BEGIN_BITMAP_FILL","BEGIN_FILL","BEGIN_GRADIENT_FILL","CUBIC_CURVE_TO","CURVE_TO","DRAW_CIRCLE","DRAW_ELLIPSE","DRAW_RECT","DRAW_ROUND_RECT","DRAW_TILES","DRAW_TRIANGLES","END_FILL","LINE_BITMAP_STYLE","LINE_GRADIENT_STYLE","LINE_STYLE","LINE_TO","MOVE_TO","OVERRIDE_MATRIX","UNKNOWN"] };
+var openfl__$internal_renderer_DrawCommandType = $hxClasses["openfl._internal.renderer.DrawCommandType"] = { __ename__ : ["openfl","_internal","renderer","DrawCommandType"], __constructs__ : ["BEGIN_BITMAP_FILL","BEGIN_FILL","BEGIN_GRADIENT_FILL","CUBIC_CURVE_TO","CURVE_TO","DRAW_CIRCLE","DRAW_ELLIPSE","DRAW_RECT","DRAW_ROUND_RECT","DRAW_TILES","DRAW_TRIANGLES","END_FILL","LINE_BITMAP_STYLE","LINE_GRADIENT_STYLE","LINE_STYLE","LINE_TO","MOVE_TO","OVERRIDE_MATRIX","UNKNOWN"] };
 openfl__$internal_renderer_DrawCommandType.BEGIN_BITMAP_FILL = ["BEGIN_BITMAP_FILL",0];
 openfl__$internal_renderer_DrawCommandType.BEGIN_BITMAP_FILL.toString = $estr;
 openfl__$internal_renderer_DrawCommandType.BEGIN_BITMAP_FILL.__enum__ = openfl__$internal_renderer_DrawCommandType;
@@ -20741,7 +21644,7 @@ openfl__$internal_stage3D__$AGALConverter_DestRegister.prototype = {
 	}
 	,__class__: openfl__$internal_stage3D__$AGALConverter_DestRegister
 };
-var openfl__$internal_stage3D__$AGALConverter_ProgramType = $hxClasses["openfl._internal.stage3D._AGALConverter.ProgramType"] = { __ename__ : true, __constructs__ : ["VERTEX","FRAGMENT"] };
+var openfl__$internal_stage3D__$AGALConverter_ProgramType = $hxClasses["openfl._internal.stage3D._AGALConverter.ProgramType"] = { __ename__ : ["openfl","_internal","stage3D","_AGALConverter","ProgramType"], __constructs__ : ["VERTEX","FRAGMENT"] };
 openfl__$internal_stage3D__$AGALConverter_ProgramType.VERTEX = ["VERTEX",0];
 openfl__$internal_stage3D__$AGALConverter_ProgramType.VERTEX.toString = $estr;
 openfl__$internal_stage3D__$AGALConverter_ProgramType.VERTEX.__enum__ = openfl__$internal_stage3D__$AGALConverter_ProgramType;
@@ -20893,7 +21796,7 @@ openfl__$internal_stage3D__$AGALConverter_RegisterMapEntry.prototype = {
 	,usage: null
 	,__class__: openfl__$internal_stage3D__$AGALConverter_RegisterMapEntry
 };
-var openfl__$internal_stage3D__$AGALConverter_RegisterUsage = $hxClasses["openfl._internal.stage3D._AGALConverter.RegisterUsage"] = { __ename__ : true, __constructs__ : ["UNUSED","VECTOR_4","MATRIX_4_4","SAMPLER_2D","SAMPLER_2D_ALPHA","SAMPLER_CUBE","VECTOR_4_ARRAY"] };
+var openfl__$internal_stage3D__$AGALConverter_RegisterUsage = $hxClasses["openfl._internal.stage3D._AGALConverter.RegisterUsage"] = { __ename__ : ["openfl","_internal","stage3D","_AGALConverter","RegisterUsage"], __constructs__ : ["UNUSED","VECTOR_4","MATRIX_4_4","SAMPLER_2D","SAMPLER_2D_ALPHA","SAMPLER_CUBE","VECTOR_4_ARRAY"] };
 openfl__$internal_stage3D__$AGALConverter_RegisterUsage.UNUSED = ["UNUSED",0];
 openfl__$internal_stage3D__$AGALConverter_RegisterUsage.UNUSED.toString = $estr;
 openfl__$internal_stage3D__$AGALConverter_RegisterUsage.UNUSED.__enum__ = openfl__$internal_stage3D__$AGALConverter_RegisterUsage;
@@ -23982,7 +24885,7 @@ openfl_display_GraphicsStroke.prototype = {
 	,__graphicsDataType: null
 	,__class__: openfl_display_GraphicsStroke
 };
-var openfl_display_GraphicsDataType = $hxClasses["openfl.display.GraphicsDataType"] = { __ename__ : true, __constructs__ : ["STROKE","SOLID","GRADIENT","PATH","BITMAP","END"] };
+var openfl_display_GraphicsDataType = $hxClasses["openfl.display.GraphicsDataType"] = { __ename__ : ["openfl","display","GraphicsDataType"], __constructs__ : ["STROKE","SOLID","GRADIENT","PATH","BITMAP","END"] };
 openfl_display_GraphicsDataType.STROKE = ["STROKE",0];
 openfl_display_GraphicsDataType.STROKE.toString = $estr;
 openfl_display_GraphicsDataType.STROKE.__enum__ = openfl_display_GraphicsDataType;
@@ -24001,7 +24904,7 @@ openfl_display_GraphicsDataType.BITMAP.__enum__ = openfl_display_GraphicsDataTyp
 openfl_display_GraphicsDataType.END = ["END",5];
 openfl_display_GraphicsDataType.END.toString = $estr;
 openfl_display_GraphicsDataType.END.__enum__ = openfl_display_GraphicsDataType;
-var openfl_display_GraphicsFillType = $hxClasses["openfl.display.GraphicsFillType"] = { __ename__ : true, __constructs__ : ["SOLID_FILL","GRADIENT_FILL","BITMAP_FILL","END_FILL"] };
+var openfl_display_GraphicsFillType = $hxClasses["openfl.display.GraphicsFillType"] = { __ename__ : ["openfl","display","GraphicsFillType"], __constructs__ : ["SOLID_FILL","GRADIENT_FILL","BITMAP_FILL","END_FILL"] };
 openfl_display_GraphicsFillType.SOLID_FILL = ["SOLID_FILL",0];
 openfl_display_GraphicsFillType.SOLID_FILL.toString = $estr;
 openfl_display_GraphicsFillType.SOLID_FILL.__enum__ = openfl_display_GraphicsFillType;
@@ -34005,6 +34908,11 @@ openfl_display_DisplayObject.__worldTransformDirty = 0;
 Field.WIDTH = 30;
 Field.HEIGHT = 30;
 Player.input_queue = new List();
+haxe_Serializer.USE_CACHE = false;
+haxe_Serializer.USE_ENUM_INDEX = false;
+haxe_Serializer.BASE64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789%:";
+haxe_Unserializer.DEFAULT_RESOLVER = Type;
+haxe_Unserializer.BASE64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789%:";
 haxe_ds_ObjectMap.count = 0;
 haxe_io_FPHelper.i64tmp = (function($this) {
 	var $r;
