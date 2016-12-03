@@ -8,4 +8,5 @@ require_once dirname(__FILE__).'/lib/php/Boot.class.php';
 
 Server::main();
 
+header( 'Location: ./index.html' ) ;
 ?>
