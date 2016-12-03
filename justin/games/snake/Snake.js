@@ -1413,7 +1413,13 @@ Client.get_scores = function() {
 	return Server.parse_hi_scores(scores);
 };
 Client.get_scores_raw = function() {
-	return haxe_Http.requestUrl(Client.serverUrl + Server.hi_score_file);
+	try {
+		return haxe_Http.requestUrl(Client.serverUrl + Server.hi_score_file);
+	} catch( e ) {
+		haxe_CallStack.lastException = e;
+		if (e instanceof js__$Boot_HaxeError) e = e.val;
+		return null;
+	}
 };
 var lime_AssetLibrary = function() {
 	this.onChange = new lime_app__$Event_$Void_$Void();
@@ -3062,16 +3068,21 @@ openfl_text_TextField.prototype = $extend(openfl_display_InteractiveObject.proto
 	,__properties__: $extend(openfl_display_InteractiveObject.prototype.__properties__,{set_wordWrap:"set_wordWrap",get_wordWrap:"get_wordWrap",set_type:"set_type",get_type:"get_type",get_textWidth:"get_textWidth",get_textHeight:"get_textHeight",set_textColor:"set_textColor",get_textColor:"get_textColor",set_text:"set_text",get_text:"get_text",set_sharpness:"set_sharpness",get_sharpness:"get_sharpness",get_selectionEndIndex:"get_selectionEndIndex",get_selectionBeginIndex:"get_selectionBeginIndex",set_selectable:"set_selectable",get_selectable:"get_selectable",set_scrollV:"set_scrollV",get_scrollV:"get_scrollV",set_scrollH:"set_scrollH",get_scrollH:"get_scrollH",set_restrict:"set_restrict",get_restrict:"get_restrict",get_numLines:"get_numLines",set_multiline:"set_multiline",get_multiline:"get_multiline",set_mouseWheelEnabled:"set_mouseWheelEnabled",get_mouseWheelEnabled:"get_mouseWheelEnabled",get_maxScrollV:"get_maxScrollV",get_maxScrollH:"get_maxScrollH",set_maxChars:"set_maxChars",get_maxChars:"get_maxChars",get_length:"get_length",set_htmlText:"set_htmlText",get_htmlText:"get_htmlText",set_gridFitType:"set_gridFitType",get_gridFitType:"get_gridFitType",set_embedFonts:"set_embedFonts",get_embedFonts:"get_embedFonts",set_displayAsPassword:"set_displayAsPassword",get_displayAsPassword:"get_displayAsPassword",set_defaultTextFormat:"set_defaultTextFormat",get_defaultTextFormat:"get_defaultTextFormat",get_caretIndex:"get_caretIndex",get_bottomScrollV:"get_bottomScrollV",set_borderColor:"set_borderColor",get_borderColor:"get_borderColor",set_border:"set_border",get_border:"get_border",set_backgroundColor:"set_backgroundColor",get_backgroundColor:"get_backgroundColor",set_background:"set_background",get_background:"get_background",set_autoSize:"set_autoSize",get_autoSize:"get_autoSize",set_antiAliasType:"set_antiAliasType",get_antiAliasType:"get_antiAliasType"})
 });
 var Scoreboard = function() {
+	this.BORDER_PX = 20;
 	openfl_text_TextField.call(this);
-	this.set_x(Tile.tile_width * 30);
-	this.set_y(0);
-	this.set_htmlText("<pre>" + Client.get_scores_raw() + "</ pre>");
+	var scores = Client.get_scores_raw();
+	if(scores != null) {
+		this.set_x(Tile.tile_width * 30 + this.BORDER_PX);
+		this.set_y(0);
+		this.set_htmlText("<pre>" + Client.get_scores_raw() + "</ pre>");
+	}
 };
 $hxClasses["Scoreboard"] = Scoreboard;
 Scoreboard.__name__ = ["Scoreboard"];
 Scoreboard.__super__ = openfl_text_TextField;
 Scoreboard.prototype = $extend(openfl_text_TextField.prototype,{
-	__class__: Scoreboard
+	BORDER_PX: null
+	,__class__: Scoreboard
 });
 var Server = function() { };
 $hxClasses["Server"] = Server;
@@ -5364,7 +5375,7 @@ var lime_AssetCache = function() {
 	this.audio = new haxe_ds_StringMap();
 	this.font = new haxe_ds_StringMap();
 	this.image = new haxe_ds_StringMap();
-	this.version = 377413;
+	this.version = 238415;
 };
 $hxClasses["lime.AssetCache"] = lime_AssetCache;
 lime_AssetCache.__name__ = ["lime","AssetCache"];

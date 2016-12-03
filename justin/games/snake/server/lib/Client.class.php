@@ -13,7 +13,15 @@ class Client {
 		return Server::parse_hi_scores($scores);
 	}
 	static function get_scores_raw() {
-		return haxe_Http::requestUrl(_hx_string_or_null(Client::$serverUrl) . _hx_string_or_null(Server::$hi_score_file));
+		try {
+			return haxe_Http::requestUrl(_hx_string_or_null(Client::$serverUrl) . _hx_string_or_null(Server::$hi_score_file));
+		}catch(Exception $__hx__e) {
+			$_ex_ = ($__hx__e instanceof HException) ? $__hx__e->e : $__hx__e;
+			$e = $_ex_;
+			{
+				return null;
+			}
+		}
 	}
 	function __toString() { return 'Client'; }
 }
