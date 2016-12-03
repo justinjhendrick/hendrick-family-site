@@ -1409,6 +1409,7 @@ Client.send_score = function(score,name,callback) {
 Client.get_scores_raw = function(callback) {
 	var http = new haxe_Http(Client.serverUrl + Server.hi_score_file);
 	http.onData = callback;
+	http.request();
 };
 var lime_AssetLibrary = function() {
 	this.onChange = new lime_app__$Event_$Void_$Void();
@@ -5363,7 +5364,7 @@ var lime_AssetCache = function() {
 	this.audio = new haxe_ds_StringMap();
 	this.font = new haxe_ds_StringMap();
 	this.image = new haxe_ds_StringMap();
-	this.version = 77959;
+	this.version = 444614;
 };
 $hxClasses["lime.AssetCache"] = lime_AssetCache;
 lime_AssetCache.__name__ = ["lime","AssetCache"];

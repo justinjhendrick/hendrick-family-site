@@ -11,6 +11,7 @@ class Client {
 	static function get_scores_raw($callback) {
 		$http = new haxe_Http(_hx_string_or_null(Client::$serverUrl) . _hx_string_or_null(Server::$hi_score_file));
 		$http->onData = $callback;
+		$http->request(null);
 	}
 	function __toString() { return 'Client'; }
 }
