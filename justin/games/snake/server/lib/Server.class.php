@@ -4,10 +4,11 @@ class Server {
 	public function __construct() {
 		if(!php_Boot::$skip_constructor) {
 		$this->hi_score_file = "hi_scores.txt";
+		haxe_Log::trace("server created", _hx_anonymous(array("fileName" => "Server.hx", "lineNumber" => 6, "className" => "Server", "methodName" => "new")));
 	}}
 	public $hi_score_file;
 	public function handle_score($score, $name) {
-		haxe_Log::trace("server got " . _hx_string_rec($score, "") . ", " . _hx_string_or_null($name), _hx_anonymous(array("fileName" => "Server.hx", "lineNumber" => 7, "className" => "Server", "methodName" => "handle_score")));
+		haxe_Log::trace("server got " . _hx_string_rec($score, "") . ", " . _hx_string_or_null($name), _hx_anonymous(array("fileName" => "Server.hx", "lineNumber" => 9, "className" => "Server", "methodName" => "handle_score")));
 		$exists = file_exists($this->hi_score_file);
 		$hi_score = null;
 		$hi_scorer_name = null;
@@ -39,9 +40,10 @@ class Server {
 		$ctx = new haxe_remoting_Context();
 		$ctx->addObject("Server", new Server(), null);
 		if(haxe_remoting_HttpConnection::handleRequest($ctx)) {
+			haxe_Log::trace("handleRequest returned true", _hx_anonymous(array("fileName" => "Server.hx", "lineNumber" => 36, "className" => "Server", "methodName" => "main")));
 			return;
 		}
-		haxe_Log::trace("This is a remoting server !", _hx_anonymous(array("fileName" => "Server.hx", "lineNumber" => 38, "className" => "Server", "methodName" => "main")));
+		haxe_Log::trace("This is a remoting server !", _hx_anonymous(array("fileName" => "Server.hx", "lineNumber" => 41, "className" => "Server", "methodName" => "main")));
 	}
 	function __toString() { return 'Server'; }
 }
