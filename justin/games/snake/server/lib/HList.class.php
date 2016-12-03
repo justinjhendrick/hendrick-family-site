@@ -18,6 +18,14 @@ class HList implements IteratorAggregate{
 		$this->q =& $x;
 		$this->length++;
 	}
+	public function push($item) {
+		$x = array($item, &$this->h);
+		$this->h =& $x;
+		if($this->q === null) {
+			$this->q =& $x;
+		}
+		$this->length++;
+	}
 	public function iterator() {
 		return new _hx_list_iterator($this);
 	}
