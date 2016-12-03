@@ -3075,6 +3075,7 @@ var Scoreboard = function() {
 		this.set_x(Tile.tile_width * 30 + this.BORDER_PX);
 		this.set_y(0);
 		this.set_htmlText("<pre>" + Client.get_scores_raw() + "</ pre>");
+		this.set_textColor(16777215);
 	}
 };
 $hxClasses["Scoreboard"] = Scoreboard;
@@ -5375,7 +5376,7 @@ var lime_AssetCache = function() {
 	this.audio = new haxe_ds_StringMap();
 	this.font = new haxe_ds_StringMap();
 	this.image = new haxe_ds_StringMap();
-	this.version = 238415;
+	this.version = 989787;
 };
 $hxClasses["lime.AssetCache"] = lime_AssetCache;
 lime_AssetCache.__name__ = ["lime","AssetCache"];
