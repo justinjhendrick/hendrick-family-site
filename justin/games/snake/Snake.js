@@ -1400,12 +1400,12 @@ var Client = function() { };
 $hxClasses["Client"] = Client;
 Client.__name__ = ["Client"];
 Client.main = function(score,name) {
-	var cnx = haxe_remoting_HttpAsyncConnection.urlConnect("http://www.hendrick.family/justin/games/snake/index.php");
+	var cnx = haxe_remoting_HttpAsyncConnection.urlConnect("bogyuuuuus");
 	cnx.setErrorHandler(function(err) {
-		haxe_Log.trace("Error: " + err,{ fileName : "Client.hx", lineNumber : 4, className : "Client", methodName : "main"});
+		haxe_Log.trace("Error: " + err,{ fileName : "Client.hx", lineNumber : 8, className : "Client", methodName : "main"});
 	});
 	cnx.resolve("Server").resolve("handle_score").call([score,name],function(data) {
-		haxe_Log.trace("Result: " + data,{ fileName : "Client.hx", lineNumber : 5, className : "Client", methodName : "main"});
+		haxe_Log.trace("Result: " + data,{ fileName : "Client.hx", lineNumber : 9, className : "Client", methodName : "main"});
 	});
 };
 var lime_AssetLibrary = function() {
@@ -4247,7 +4247,7 @@ var lime_AssetCache = function() {
 	this.audio = new haxe_ds_StringMap();
 	this.font = new haxe_ds_StringMap();
 	this.image = new haxe_ds_StringMap();
-	this.version = 834343;
+	this.version = 69193;
 };
 $hxClasses["lime.AssetCache"] = lime_AssetCache;
 lime_AssetCache.__name__ = ["lime","AssetCache"];
