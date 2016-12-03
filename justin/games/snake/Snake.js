@@ -1402,10 +1402,10 @@ Client.__name__ = ["Client"];
 Client.main = function(score,name) {
 	var cnx = haxe_remoting_HttpAsyncConnection.urlConnect("http://www.hendrick.family/justin/games/snake/server/index.php");
 	cnx.setErrorHandler(function(err) {
-		haxe_Log.trace("Error: " + err,{ fileName : "Client.hx", lineNumber : 4, className : "Client", methodName : "main"});
+		haxe_Log.trace("Error: " + err,{ fileName : "Client.hx", lineNumber : 7, className : "Client", methodName : "main"});
 	});
 	cnx.resolve("Server").resolve("handle_score").call([score,name],function(data) {
-		haxe_Log.trace("Result: " + data,{ fileName : "Client.hx", lineNumber : 5, className : "Client", methodName : "main"});
+		haxe_Log.trace("Result: " + data,{ fileName : "Client.hx", lineNumber : 8, className : "Client", methodName : "main"});
 	});
 };
 var lime_AssetLibrary = function() {
@@ -1683,6 +1683,7 @@ GameResult.GAME_OVER.toString = $estr;
 GameResult.GAME_OVER.__enum__ = GameResult;
 var Field = function(_main_sprite) {
 	this.first_frame = true;
+	this.first_game_over_frame = false;
 	this.game_over = false;
 	this.main_sprite = _main_sprite;
 };
@@ -1693,6 +1694,7 @@ Field.prototype = {
 	,tile_grid: null
 	,main_sprite: null
 	,game_over: null
+	,first_game_over_frame: null
 	,first_frame: null
 	,every_frame: function() {
 		if(!this.game_over) {
@@ -1725,8 +1727,14 @@ Field.prototype = {
 				break;
 			}
 			var result = this.snake.move(this.tile_grid);
-			if(result == GameResult.GAME_OVER) this.game_over = true;
-		} else Client.main(this.snake.length,"Justin");
+			if(result == GameResult.GAME_OVER) {
+				this.game_over = true;
+				this.first_game_over_frame = true;
+			}
+		} else if(this.first_game_over_frame) {
+			Client.main(this.snake.length,"Justin");
+			this.first_game_over_frame = false;
+		}
 	}
 	,__class__: Field
 };
@@ -4247,7 +4255,7 @@ var lime_AssetCache = function() {
 	this.audio = new haxe_ds_StringMap();
 	this.font = new haxe_ds_StringMap();
 	this.image = new haxe_ds_StringMap();
-	this.version = 637921;
+	this.version = 901611;
 };
 $hxClasses["lime.AssetCache"] = lime_AssetCache;
 lime_AssetCache.__name__ = ["lime","AssetCache"];
