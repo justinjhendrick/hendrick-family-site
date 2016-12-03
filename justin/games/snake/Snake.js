@@ -3071,12 +3071,15 @@ var Scoreboard = function() {
 	var _g = this;
 	openfl_text_TextField.call(this);
 	Client.get_scores_raw(function(s) {
+		haxe_Log.trace("got scores " + s,{ fileName : "Scoreboard.hx", lineNumber : 11, className : "Scoreboard", methodName : "new"});
+		_g.set_x(Tile.tile_width * 30 + _g.BORDER_PX);
+		_g.set_y(0);
+		_g.set_htmlText("<h1>High Scores</h1>\n");
 		if(s != null) {
-			_g.set_x(Tile.tile_width * 30 + _g.BORDER_PX);
-			_g.set_y(0);
-			_g.set_htmlText("<h1>High Scores</h1>\n" + "<pre>" + s + "</ pre>");
-			_g.set_textColor(16777215);
+			var _g1 = _g;
+			_g1.set_htmlText(_g1.get_htmlText() + ("<pre>" + s + "</ pre>"));
 		}
+		_g.set_textColor(16777215);
 	});
 };
 $hxClasses["Scoreboard"] = Scoreboard;
@@ -5364,7 +5367,7 @@ var lime_AssetCache = function() {
 	this.audio = new haxe_ds_StringMap();
 	this.font = new haxe_ds_StringMap();
 	this.image = new haxe_ds_StringMap();
-	this.version = 444614;
+	this.version = 273882;
 };
 $hxClasses["lime.AssetCache"] = lime_AssetCache;
 lime_AssetCache.__name__ = ["lime","AssetCache"];
