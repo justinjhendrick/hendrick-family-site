@@ -23,7 +23,7 @@ class Server {
 		if(!$exists || $score > $hi_score) {
 			$hi_scorer_name = $name;
 			$hi_score = $score;
-			sys_io_File::write($this->hi_score_file, null)->writeString(Std::string($hi_score) . _hx_string_or_null($hi_scorer_name));
+			sys_io_File::write($this->hi_score_file, null)->writeString(Std::string($hi_score) . "," . _hx_string_or_null($hi_scorer_name));
 		}
 	}
 	public function __call($m, $a) {
