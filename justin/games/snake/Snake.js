@@ -12,7 +12,7 @@ var ApplicationMain = function() { };
 $hxClasses["ApplicationMain"] = ApplicationMain;
 ApplicationMain.__name__ = ["ApplicationMain"];
 ApplicationMain.main = function() {
-	ApplicationMain.config = { build : "13", company : "Company Name", file : "Snake", fps : 25, name : "Snake", orientation : "", packageName : "com.sample.snake", version : "1.0.0", windows : [{ allowHighDPI : false, antialiasing : 0, background : 0, borderless : false, depthBuffer : false, display : 0, fullscreen : false, hardware : true, height : 0, hidden : null, maximized : null, minimized : null, parameters : "{}", resizable : true, stencilBuffer : true, title : "Snake", vsync : false, width : 0, x : null, y : null}]};
+	ApplicationMain.config = { build : "14", company : "Company Name", file : "Snake", fps : 25, name : "Snake", orientation : "", packageName : "com.sample.snake", version : "1.0.0", windows : [{ allowHighDPI : false, antialiasing : 0, background : 0, borderless : false, depthBuffer : false, display : 0, fullscreen : false, hardware : true, height : 0, hidden : null, maximized : null, minimized : null, parameters : "{}", resizable : true, stencilBuffer : true, title : "Snake", vsync : false, width : 0, x : null, y : null}]};
 };
 ApplicationMain.create = function() {
 	var app = new openfl_display_Application();
@@ -1400,7 +1400,7 @@ var Client = function() { };
 $hxClasses["Client"] = Client;
 Client.__name__ = ["Client"];
 Client.main = function(score,name) {
-	var cnx = haxe_remoting_HttpAsyncConnection.urlConnect("http://localhost/");
+	var cnx = haxe_remoting_HttpAsyncConnection.urlConnect("http://hendrick.family/justin/games/snake");
 	cnx.setErrorHandler(function(err) {
 		haxe_Log.trace("Error: " + err,{ fileName : "Client.hx", lineNumber : 4, className : "Client", methodName : "main"});
 	});
@@ -4247,7 +4247,7 @@ var lime_AssetCache = function() {
 	this.audio = new haxe_ds_StringMap();
 	this.font = new haxe_ds_StringMap();
 	this.image = new haxe_ds_StringMap();
-	this.version = 548885;
+	this.version = 793712;
 };
 $hxClasses["lime.AssetCache"] = lime_AssetCache;
 lime_AssetCache.__name__ = ["lime","AssetCache"];
