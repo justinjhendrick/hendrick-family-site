@@ -520,14 +520,6 @@ class haxe_Http {
 			throw new HException('Unable to call <'.$m.'>');
 	}
 	static $PROXY = null;
-	static function requestUrl($url) {
-		$h = new haxe_Http($url);
-		$r = null;
-		$h->onData = array(new _hx_lambda(array(&$h, &$r, &$url), "haxe_Http_7"), 'execute');
-		$h->onError = array(new _hx_lambda(array(&$h, &$r, &$url), "haxe_Http_8"), 'execute');
-		$h->request(false);
-		return $r;
-	}
 	function __toString() { return 'haxe.Http'; }
 }
 function haxe_Http_0(&$__hx__this, &$url, $data) {
@@ -560,15 +552,5 @@ function haxe_Http_5(&$_g, &$err, &$me, &$me1, &$old, &$output, &$post, $e) {
 function haxe_Http_6(&$api, &$b1, &$boundary, &$data, &$host, &$method, &$multipart, &$port, &$portString, &$post, &$request, &$secure, &$sock, &$uri, &$url_regexp, $h) {
 	{
 		return $h->header === "Content-Type";
-	}
-}
-function haxe_Http_7(&$h, &$r, &$url, $d) {
-	{
-		$r = $d;
-	}
-}
-function haxe_Http_8(&$h, &$r, &$url, $e) {
-	{
-		throw new HException($e);
 	}
 }

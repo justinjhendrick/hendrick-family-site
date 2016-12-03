@@ -1399,27 +1399,16 @@ DocumentClass.prototype = $extend(Main.prototype,{
 var Client = function() { };
 $hxClasses["Client"] = Client;
 Client.__name__ = ["Client"];
-Client.send_score = function(score,name) {
+Client.send_score = function(score,name,callback) {
 	var cnx = haxe_remoting_HttpAsyncConnection.urlConnect(Client.serverUrl + "index.php");
 	cnx.setErrorHandler(function(err) {
-		haxe_Log.trace("Error: " + err,{ fileName : "Client.hx", lineNumber : 12, className : "Client", methodName : "send_score"});
+		haxe_Log.trace("Error: " + err,{ fileName : "Client.hx", lineNumber : 14, className : "Client", methodName : "send_score"});
 	});
-	cnx.resolve("Server").resolve("handle_score").call([score,name],function(data) {
-		haxe_Log.trace("Result: " + data,{ fileName : "Client.hx", lineNumber : 14, className : "Client", methodName : "send_score"});
-	});
+	cnx.resolve("Server").resolve("handle_score").call([score,name],callback);
 };
-Client.get_scores = function() {
-	var scores = Client.get_scores_raw();
-	return Server.parse_hi_scores(scores);
-};
-Client.get_scores_raw = function() {
-	try {
-		return haxe_Http.requestUrl(Client.serverUrl + Server.hi_score_file);
-	} catch( e ) {
-		haxe_CallStack.lastException = e;
-		if (e instanceof js__$Boot_HaxeError) e = e.val;
-		return null;
-	}
+Client.get_scores_raw = function(callback) {
+	var http = new haxe_Http(Client.serverUrl + Server.hi_score_file);
+	http.onData = callback;
 };
 var lime_AssetLibrary = function() {
 	this.onChange = new lime_app__$Event_$Void_$Void();
@@ -1695,6 +1684,7 @@ GameResult.GAME_OVER = ["GAME_OVER",1];
 GameResult.GAME_OVER.toString = $estr;
 GameResult.GAME_OVER.__enum__ = GameResult;
 var Field = function(_main_sprite) {
+	this.frame_number = 0;
 	this.first_frame = true;
 	this.first_game_over_frame = false;
 	this.game_over = false;
@@ -1708,15 +1698,16 @@ Field.prototype = {
 	,main_sprite: null
 	,game_over: null
 	,first_game_over_frame: null
-	,hi_scoreboard: null
+	,scoreboard: null
 	,first_frame: null
+	,frame_number: null
 	,every_frame: function() {
 		if(!this.game_over) {
 			if(this.first_frame) {
 				this.tile_grid = new TileGrid(30,30);
 				this.main_sprite.addChild(this.tile_grid);
-				this.hi_scoreboard = new Scoreboard();
-				this.main_sprite.addChild(this.hi_scoreboard);
+				this.scoreboard = new Scoreboard();
+				this.main_sprite.addChild(this.scoreboard);
 				this.main_sprite.stage.addEventListener("resize",($_=this.tile_grid,$bind($_,$_.create_grid_bitmap)));
 				this.main_sprite.stage.addEventListener("resize",($_=this.tile_grid,$bind($_,$_.redraw_apple)));
 				this.snake = new Snake(3,Direction.RIGHT,3,0,this.tile_grid);
@@ -1748,9 +1739,16 @@ Field.prototype = {
 				this.first_game_over_frame = true;
 			}
 		} else if(this.first_game_over_frame) {
-			Client.send_score(this.snake.length,"Justin");
+			Client.send_score(this.snake.length,"Justin",$bind(this,this.reset_scoreboard));
 			this.first_game_over_frame = false;
 		}
+		if(this.frame_number % 1250 == 0) this.reset_scoreboard(null);
+		this.frame_number += 1;
+	}
+	,reset_scoreboard: function(ignore) {
+		this.main_sprite.removeChild(this.scoreboard);
+		this.scoreboard = new Scoreboard();
+		this.main_sprite.addChild(this.scoreboard);
 	}
 	,__class__: Field
 };
@@ -3069,14 +3067,16 @@ openfl_text_TextField.prototype = $extend(openfl_display_InteractiveObject.proto
 });
 var Scoreboard = function() {
 	this.BORDER_PX = 20;
+	var _g = this;
 	openfl_text_TextField.call(this);
-	var scores = Client.get_scores_raw();
-	if(scores != null) {
-		this.set_x(Tile.tile_width * 30 + this.BORDER_PX);
-		this.set_y(0);
-		this.set_htmlText("<pre>" + Client.get_scores_raw() + "</ pre>");
-		this.set_textColor(16777215);
-	}
+	Client.get_scores_raw(function(s) {
+		if(s != null) {
+			_g.set_x(Tile.tile_width * 30 + _g.BORDER_PX);
+			_g.set_y(0);
+			_g.set_htmlText("<h1>High Scores</h1>\n" + "<pre>" + s + "</ pre>");
+			_g.set_textColor(16777215);
+		}
+	});
 };
 $hxClasses["Scoreboard"] = Scoreboard;
 Scoreboard.__name__ = ["Scoreboard"];
@@ -3771,19 +3771,6 @@ var haxe_Http = function(url) {
 };
 $hxClasses["haxe.Http"] = haxe_Http;
 haxe_Http.__name__ = ["haxe","Http"];
-haxe_Http.requestUrl = function(url) {
-	var h = new haxe_Http(url);
-	h.async = false;
-	var r = null;
-	h.onData = function(d) {
-		r = d;
-	};
-	h.onError = function(e) {
-		throw new js__$Boot_HaxeError(e);
-	};
-	h.request(false);
-	return r;
-};
 haxe_Http.prototype = {
 	url: null
 	,responseData: null
@@ -5376,7 +5363,7 @@ var lime_AssetCache = function() {
 	this.audio = new haxe_ds_StringMap();
 	this.font = new haxe_ds_StringMap();
 	this.image = new haxe_ds_StringMap();
-	this.version = 989787;
+	this.version = 77959;
 };
 $hxClasses["lime.AssetCache"] = lime_AssetCache;
 lime_AssetCache.__name__ = ["lime","AssetCache"];
