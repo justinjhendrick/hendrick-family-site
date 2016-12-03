@@ -1400,8 +1400,13 @@ var Client = function() { };
 $hxClasses["Client"] = Client;
 Client.__name__ = ["Client"];
 Client.main = function(score,name) {
-	var cnx = haxe_remoting_HttpConnection.urlConnect("http://www.hendrick.family/justin/games/snake/index.php");
-	cnx.resolve("Server").resolve("handle_score").call([score,name]);
+	var cnx = haxe_remoting_HttpAsyncConnection.urlConnect("http://www.hendrick.family/justin/games/snake/server");
+	cnx.setErrorHandler(function(err) {
+		haxe_Log.trace("Error: " + err,{ fileName : "Client.hx", lineNumber : 4, className : "Client", methodName : "main"});
+	});
+	cnx.resolve("Server").resolve("handle_score").call([score,name],function(data) {
+		haxe_Log.trace("Result: " + data,{ fileName : "Client.hx", lineNumber : 5, className : "Client", methodName : "main"});
+	});
 };
 var lime_AssetLibrary = function() {
 	this.onChange = new lime_app__$Event_$Void_$Void();
@@ -3791,53 +3796,65 @@ haxe_io_Path.prototype = {
 	}
 	,__class__: haxe_io_Path
 };
-var haxe_remoting_Connection = function() { };
-$hxClasses["haxe.remoting.Connection"] = haxe_remoting_Connection;
-haxe_remoting_Connection.__name__ = ["haxe","remoting","Connection"];
-haxe_remoting_Connection.prototype = {
+var haxe_remoting_AsyncConnection = function() { };
+$hxClasses["haxe.remoting.AsyncConnection"] = haxe_remoting_AsyncConnection;
+haxe_remoting_AsyncConnection.__name__ = ["haxe","remoting","AsyncConnection"];
+haxe_remoting_AsyncConnection.prototype = {
 	resolve: null
 	,call: null
-	,__class__: haxe_remoting_Connection
+	,__class__: haxe_remoting_AsyncConnection
 };
-var haxe_remoting_HttpConnection = function(url,path) {
-	this.__url = url;
+var haxe_remoting_HttpAsyncConnection = function(data,path) {
+	this.__data = data;
 	this.__path = path;
 };
-$hxClasses["haxe.remoting.HttpConnection"] = haxe_remoting_HttpConnection;
-haxe_remoting_HttpConnection.__name__ = ["haxe","remoting","HttpConnection"];
-haxe_remoting_HttpConnection.__interfaces__ = [haxe_remoting_Connection];
-haxe_remoting_HttpConnection.urlConnect = function(url) {
-	return new haxe_remoting_HttpConnection(url,[]);
+$hxClasses["haxe.remoting.HttpAsyncConnection"] = haxe_remoting_HttpAsyncConnection;
+haxe_remoting_HttpAsyncConnection.__name__ = ["haxe","remoting","HttpAsyncConnection"];
+haxe_remoting_HttpAsyncConnection.__interfaces__ = [haxe_remoting_AsyncConnection];
+haxe_remoting_HttpAsyncConnection.urlConnect = function(url) {
+	return new haxe_remoting_HttpAsyncConnection({ url : url, error : function(e) {
+		throw new js__$Boot_HaxeError(e);
+	}},[]);
 };
-haxe_remoting_HttpConnection.prototype = {
-	__url: null
+haxe_remoting_HttpAsyncConnection.prototype = {
+	__data: null
 	,__path: null
 	,resolve: function(name) {
-		var c = new haxe_remoting_HttpConnection(this.__url,this.__path.slice());
+		var c = new haxe_remoting_HttpAsyncConnection(this.__data,this.__path.slice());
 		c.__path.push(name);
 		return c;
 	}
-	,call: function(params) {
-		var data = null;
-		var h = new haxe_Http(this.__url);
-		h.async = false;
+	,setErrorHandler: function(h) {
+		this.__data.error = h;
+	}
+	,call: function(params,onResult) {
+		var h = new haxe_Http(this.__data.url);
 		var s = new haxe_Serializer();
 		s.serialize(this.__path);
 		s.serialize(params);
 		h.setHeader("X-Haxe-Remoting","1");
 		h.setParameter("__x",s.toString());
-		h.onData = function(d) {
-			data = d;
+		var error = this.__data.error;
+		h.onData = function(response) {
+			var ok = true;
+			var ret;
+			try {
+				if(HxOverrides.substr(response,0,3) != "hxr") throw new js__$Boot_HaxeError("Invalid response : '" + response + "'");
+				var s1 = new haxe_Unserializer(HxOverrides.substr(response,3,null));
+				ret = s1.unserialize();
+			} catch( err ) {
+				haxe_CallStack.lastException = err;
+				if (err instanceof js__$Boot_HaxeError) err = err.val;
+				ret = null;
+				ok = false;
+				error(err);
+			}
+			if(ok && onResult != null) onResult(ret);
 		};
-		h.onError = function(e) {
-			throw new js__$Boot_HaxeError(e);
-		};
+		h.onError = error;
 		h.request(true);
-		if(HxOverrides.substr(data,0,3) != "hxr") throw new js__$Boot_HaxeError("Invalid response : '" + data + "'");
-		data = HxOverrides.substr(data,3,null);
-		return new haxe_Unserializer(data).unserialize();
 	}
-	,__class__: haxe_remoting_HttpConnection
+	,__class__: haxe_remoting_HttpAsyncConnection
 };
 var js__$Boot_HaxeError = function(val) {
 	Error.call(this);
@@ -4230,7 +4247,7 @@ var lime_AssetCache = function() {
 	this.audio = new haxe_ds_StringMap();
 	this.font = new haxe_ds_StringMap();
 	this.image = new haxe_ds_StringMap();
-	this.version = 109511;
+	this.version = 216674;
 };
 $hxClasses["lime.AssetCache"] = lime_AssetCache;
 lime_AssetCache.__name__ = ["lime","AssetCache"];
