@@ -7,9 +7,10 @@ class Server {
 		$exists = file_exists(Server::$hi_score_file);
 		$hi_score = null;
 		$hi_scorer_name = null;
+		$old_scores = null;
 		if($exists) {
-			$content = sys_io_File::getContent(Server::$hi_score_file);
-			$top = _hx_array_get(Server::parse_hi_scores($content), 0);
+			$old_scores = sys_io_File::getContent(Server::$hi_score_file);
+			$top = _hx_array_get(Server::parse_hi_scores($old_scores), 0);
 			$hi_score = $top->score;
 			$hi_scorer_name = $top->name;
 		} else {
@@ -18,9 +19,16 @@ class Server {
 		if(!$exists || $score > $hi_score) {
 			$hi_scorer_name = $name;
 			$hi_score = $score;
-			sys_io_File::write(Server::$hi_score_file, null)->writeString(Std::string($hi_score) . _hx_string_or_null(Server::$delim) . _hx_string_or_null($hi_scorer_name));
+			$new_hi_scores = Std::string($hi_score) . _hx_string_or_null(Server::$delim) . _hx_string_or_null($hi_scorer_name);
+			sys_io_File::write(Server::$hi_score_file, null)->writeString($new_hi_scores);
+			return $new_hi_scores;
+		} else {
+			if($old_scores !== null) {
+				return $old_scores;
+			} else {
+				return null;
+			}
 		}
-		return "test";
 	}}
 	static $hi_score_file = "hi_scores.txt";
 	static $delim = ", ";
@@ -45,10 +53,10 @@ class Server {
 		$ctx = new haxe_remoting_Context();
 		$ctx->addObject("Server", new Server(), null);
 		if(haxe_remoting_HttpConnection::handleRequest($ctx)) {
-			haxe_Log::trace("handleRequest returned true", _hx_anonymous(array("fileName" => "Server.hx", "lineNumber" => 50, "className" => "Server", "methodName" => "main")));
+			haxe_Log::trace("handleRequest returned true", _hx_anonymous(array("fileName" => "Server.hx", "lineNumber" => 58, "className" => "Server", "methodName" => "main")));
 			return;
 		}
-		haxe_Log::trace("This is a remoting server !", _hx_anonymous(array("fileName" => "Server.hx", "lineNumber" => 55, "className" => "Server", "methodName" => "main")));
+		haxe_Log::trace("This is a remoting server !", _hx_anonymous(array("fileName" => "Server.hx", "lineNumber" => 63, "className" => "Server", "methodName" => "main")));
 	}
 	function __toString() { return 'Server'; }
 }
