@@ -12,7 +12,7 @@ var ApplicationMain = function() { };
 $hxClasses["ApplicationMain"] = ApplicationMain;
 ApplicationMain.__name__ = ["ApplicationMain"];
 ApplicationMain.main = function() {
-	ApplicationMain.config = { build : "15", company : "Company Name", file : "Snake", fps : 25, name : "Snake", orientation : "", packageName : "com.sample.snake", version : "1.0.0", windows : [{ allowHighDPI : false, antialiasing : 0, background : 0, borderless : false, depthBuffer : false, display : 0, fullscreen : false, hardware : true, height : 0, hidden : null, maximized : null, minimized : null, parameters : "{}", resizable : true, stencilBuffer : true, title : "Snake", vsync : false, width : 0, x : null, y : null}]};
+	ApplicationMain.config = { build : "16", company : "Company Name", file : "Snake", fps : 25, name : "Snake", orientation : "", packageName : "com.sample.snake", version : "1.0.0", windows : [{ allowHighDPI : false, antialiasing : 0, background : 0, borderless : false, depthBuffer : false, display : 0, fullscreen : false, hardware : true, height : 0, hidden : null, maximized : null, minimized : null, parameters : "{}", resizable : true, stencilBuffer : true, title : "Snake", vsync : false, width : 0, x : null, y : null}]};
 };
 ApplicationMain.create = function() {
 	var app = new openfl_display_Application();
@@ -1402,7 +1402,7 @@ Client.__name__ = ["Client"];
 Client.send_score = function(score,name,callback) {
 	var cnx = haxe_remoting_HttpAsyncConnection.urlConnect(Client.serverUrl + "index.php");
 	cnx.setErrorHandler(function(err) {
-		haxe_Log.trace("Error: " + err,{ fileName : "Client.hx", lineNumber : 14, className : "Client", methodName : "send_score"});
+		haxe_Log.trace("Error: " + err,{ fileName : "Client.hx", lineNumber : 16, className : "Client", methodName : "send_score"});
 	});
 	cnx.resolve("Server").resolve("handle_score").call([score,name],callback);
 };
@@ -1707,7 +1707,7 @@ Field.prototype = {
 			if(this.first_frame) {
 				this.tile_grid = new TileGrid(30,30);
 				this.main_sprite.addChild(this.tile_grid);
-				this.scoreboard = new Scoreboard();
+				this.scoreboard = new Scoreboard(null);
 				this.main_sprite.addChild(this.scoreboard);
 				this.main_sprite.stage.addEventListener("resize",($_=this.tile_grid,$bind($_,$_.create_grid_bitmap)));
 				this.main_sprite.stage.addEventListener("resize",($_=this.tile_grid,$bind($_,$_.redraw_apple)));
@@ -1746,9 +1746,9 @@ Field.prototype = {
 		if(this.frame_number % 1250 == 0) this.reset_scoreboard(null);
 		this.frame_number += 1;
 	}
-	,reset_scoreboard: function(ignore) {
+	,reset_scoreboard: function(new_scores) {
 		this.main_sprite.removeChild(this.scoreboard);
-		this.scoreboard = new Scoreboard();
+		this.scoreboard = new Scoreboard(new_scores);
 		this.main_sprite.addChild(this.scoreboard);
 	}
 	,__class__: Field
@@ -3066,27 +3066,27 @@ openfl_text_TextField.prototype = $extend(openfl_display_InteractiveObject.proto
 	,__class__: openfl_text_TextField
 	,__properties__: $extend(openfl_display_InteractiveObject.prototype.__properties__,{set_wordWrap:"set_wordWrap",get_wordWrap:"get_wordWrap",set_type:"set_type",get_type:"get_type",get_textWidth:"get_textWidth",get_textHeight:"get_textHeight",set_textColor:"set_textColor",get_textColor:"get_textColor",set_text:"set_text",get_text:"get_text",set_sharpness:"set_sharpness",get_sharpness:"get_sharpness",get_selectionEndIndex:"get_selectionEndIndex",get_selectionBeginIndex:"get_selectionBeginIndex",set_selectable:"set_selectable",get_selectable:"get_selectable",set_scrollV:"set_scrollV",get_scrollV:"get_scrollV",set_scrollH:"set_scrollH",get_scrollH:"get_scrollH",set_restrict:"set_restrict",get_restrict:"get_restrict",get_numLines:"get_numLines",set_multiline:"set_multiline",get_multiline:"get_multiline",set_mouseWheelEnabled:"set_mouseWheelEnabled",get_mouseWheelEnabled:"get_mouseWheelEnabled",get_maxScrollV:"get_maxScrollV",get_maxScrollH:"get_maxScrollH",set_maxChars:"set_maxChars",get_maxChars:"get_maxChars",get_length:"get_length",set_htmlText:"set_htmlText",get_htmlText:"get_htmlText",set_gridFitType:"set_gridFitType",get_gridFitType:"get_gridFitType",set_embedFonts:"set_embedFonts",get_embedFonts:"get_embedFonts",set_displayAsPassword:"set_displayAsPassword",get_displayAsPassword:"get_displayAsPassword",set_defaultTextFormat:"set_defaultTextFormat",get_defaultTextFormat:"get_defaultTextFormat",get_caretIndex:"get_caretIndex",get_bottomScrollV:"get_bottomScrollV",set_borderColor:"set_borderColor",get_borderColor:"get_borderColor",set_border:"set_border",get_border:"get_border",set_backgroundColor:"set_backgroundColor",get_backgroundColor:"get_backgroundColor",set_background:"set_background",get_background:"get_background",set_autoSize:"set_autoSize",get_autoSize:"get_autoSize",set_antiAliasType:"set_antiAliasType",get_antiAliasType:"get_antiAliasType"})
 });
-var Scoreboard = function() {
+var Scoreboard = function(new_scores) {
 	this.BORDER_PX = 20;
-	var _g = this;
 	openfl_text_TextField.call(this);
-	Client.get_scores_raw(function(s) {
-		haxe_Log.trace("got scores " + s,{ fileName : "Scoreboard.hx", lineNumber : 11, className : "Scoreboard", methodName : "new"});
-		_g.set_x(Tile.tile_width * 30 + _g.BORDER_PX);
-		_g.set_y(0);
-		_g.set_htmlText("<h1>High Scores</h1>\n");
-		if(s != null) {
-			var _g1 = _g;
-			_g1.set_htmlText(_g1.get_htmlText() + ("<pre>" + s + "</ pre>"));
-		}
-		_g.set_textColor(16777215);
-	});
+	if(new_scores == null) Client.get_scores_raw($bind(this,this.create_text_box)); else this.create_text_box(new_scores);
 };
 $hxClasses["Scoreboard"] = Scoreboard;
 Scoreboard.__name__ = ["Scoreboard"];
 Scoreboard.__super__ = openfl_text_TextField;
 Scoreboard.prototype = $extend(openfl_text_TextField.prototype,{
 	BORDER_PX: null
+	,create_text_box: function(s) {
+		haxe_Log.trace("got scores " + s,{ fileName : "Scoreboard.hx", lineNumber : 22, className : "Scoreboard", methodName : "create_text_box"});
+		this.set_x(Tile.tile_width * 30 + this.BORDER_PX);
+		this.set_y(0);
+		this.set_htmlText("<h1>High Scores</h1>\n");
+		if(s != null) {
+			var _g = this;
+			_g.set_htmlText(_g.get_htmlText() + ("<pre>" + s + "</ pre>"));
+		}
+		this.set_textColor(16777215);
+	}
 	,__class__: Scoreboard
 });
 var Server = function() { };
@@ -5367,7 +5367,7 @@ var lime_AssetCache = function() {
 	this.audio = new haxe_ds_StringMap();
 	this.font = new haxe_ds_StringMap();
 	this.image = new haxe_ds_StringMap();
-	this.version = 273882;
+	this.version = 706689;
 };
 $hxClasses["lime.AssetCache"] = lime_AssetCache;
 lime_AssetCache.__name__ = ["lime","AssetCache"];
