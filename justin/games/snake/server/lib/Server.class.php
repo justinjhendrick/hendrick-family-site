@@ -3,7 +3,6 @@
 class Server {
 	public function __construct() {}
 	public function handle_score($score, $name) { if(!php_Boot::$skip_constructor) {
-		haxe_Log::trace("server got " . _hx_string_rec($score, "") . ", " . _hx_string_or_null($name), _hx_anonymous(array("fileName" => "Server.hx", "lineNumber" => 22, "className" => "Server", "methodName" => "handle_score")));
 		$exists = file_exists(Server::$hi_score_file);
 		$hi_score = null;
 		$hi_scorer_name = null;
@@ -53,10 +52,8 @@ class Server {
 		$ctx = new haxe_remoting_Context();
 		$ctx->addObject("Server", new Server(), null);
 		if(haxe_remoting_HttpConnection::handleRequest($ctx)) {
-			haxe_Log::trace("handleRequest returned true", _hx_anonymous(array("fileName" => "Server.hx", "lineNumber" => 58, "className" => "Server", "methodName" => "main")));
 			return;
 		}
-		haxe_Log::trace("This is a remoting server !", _hx_anonymous(array("fileName" => "Server.hx", "lineNumber" => 63, "className" => "Server", "methodName" => "main")));
 	}
 	function __toString() { return 'Server'; }
 }

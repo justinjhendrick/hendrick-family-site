@@ -17,6 +17,6 @@ class Client {
 }
 function Client_0(&$callback, &$cnx, &$name, &$score, $err) {
 	{
-		haxe_Log::trace("Error: " . _hx_string_or_null($err), _hx_anonymous(array("fileName" => "Client.hx", "lineNumber" => 16, "className" => "Client", "methodName" => "send_score")));
+		haxe_Log::trace("Error: " . _hx_string_or_null($err), _hx_anonymous(array("fileName" => "Client.hx", "lineNumber" => 15, "className" => "Client", "methodName" => "send_score")));
 	}
 }

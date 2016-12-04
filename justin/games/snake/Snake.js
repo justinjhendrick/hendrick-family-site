@@ -1402,7 +1402,7 @@ Client.__name__ = ["Client"];
 Client.send_score = function(score,name,callback) {
 	var cnx = haxe_remoting_HttpAsyncConnection.urlConnect(Client.serverUrl + "index.php");
 	cnx.setErrorHandler(function(err) {
-		haxe_Log.trace("Error: " + err,{ fileName : "Client.hx", lineNumber : 16, className : "Client", methodName : "send_score"});
+		haxe_Log.trace("Error: " + err,{ fileName : "Client.hx", lineNumber : 15, className : "Client", methodName : "send_score"});
 	});
 	cnx.resolve("Server").resolve("handle_score").call([score,name],callback);
 };
@@ -5367,7 +5367,7 @@ var lime_AssetCache = function() {
 	this.audio = new haxe_ds_StringMap();
 	this.font = new haxe_ds_StringMap();
 	this.image = new haxe_ds_StringMap();
-	this.version = 818843;
+	this.version = 124998;
 };
 $hxClasses["lime.AssetCache"] = lime_AssetCache;
 lime_AssetCache.__name__ = ["lime","AssetCache"];
