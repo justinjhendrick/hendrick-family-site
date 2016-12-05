@@ -3144,6 +3144,7 @@ Scoreboard.prototype = $extend(openfl_text_TextField.prototype,{
 		this.set_textColor(16777215);
 	}
 	,is_new_hi_score: function(score) {
+		if(this.cached == null) return true;
 		var top = this.cached[0].score;
 		return score > top;
 	}
@@ -5427,7 +5428,7 @@ var lime_AssetCache = function() {
 	this.audio = new haxe_ds_StringMap();
 	this.font = new haxe_ds_StringMap();
 	this.image = new haxe_ds_StringMap();
-	this.version = 581974;
+	this.version = 58274;
 };
 $hxClasses["lime.AssetCache"] = lime_AssetCache;
 lime_AssetCache.__name__ = ["lime","AssetCache"];
