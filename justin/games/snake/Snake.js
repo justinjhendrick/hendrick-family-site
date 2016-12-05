@@ -12,7 +12,7 @@ var ApplicationMain = function() { };
 $hxClasses["ApplicationMain"] = ApplicationMain;
 ApplicationMain.__name__ = ["ApplicationMain"];
 ApplicationMain.main = function() {
-	ApplicationMain.config = { build : "16", company : "Company Name", file : "Snake", fps : 25, name : "Snake", orientation : "", packageName : "com.sample.snake", version : "1.0.0", windows : [{ allowHighDPI : false, antialiasing : 0, background : 0, borderless : false, depthBuffer : false, display : 0, fullscreen : false, hardware : true, height : 0, hidden : null, maximized : null, minimized : null, parameters : "{}", resizable : true, stencilBuffer : true, title : "Snake", vsync : false, width : 0, x : null, y : null}]};
+	ApplicationMain.config = { build : "17", company : "Company Name", file : "Snake", fps : 25, name : "Snake", orientation : "", packageName : "com.sample.snake", version : "1.0.0", windows : [{ allowHighDPI : false, antialiasing : 0, background : 0, borderless : false, depthBuffer : false, display : 0, fullscreen : false, hardware : true, height : 0, hidden : null, maximized : null, minimized : null, parameters : "{}", resizable : true, stencilBuffer : true, title : "Snake", vsync : false, width : 0, x : null, y : null}]};
 };
 ApplicationMain.create = function() {
 	var app = new openfl_display_Application();
@@ -1703,6 +1703,7 @@ Field.prototype = {
 	,first_frame: null
 	,frame_number: null
 	,every_frame: function() {
+		var _g = this;
 		if(!this.game_over) {
 			if(this.first_frame) {
 				this.tile_grid = new TileGrid(30,30);
@@ -1715,8 +1716,8 @@ Field.prototype = {
 				this.tile_grid.place_apple(this.snake);
 				this.first_frame = false;
 			}
-			var _g = Player.get_input();
-			switch(_g[1]) {
+			var _g1 = Player.get_input();
+			switch(_g1[1]) {
 			case 1:
 				this.snake.set_dir(Direction.UP);
 				break;
@@ -1740,7 +1741,14 @@ Field.prototype = {
 				this.first_game_over_frame = true;
 			}
 		} else if(this.first_game_over_frame) {
-			Client.send_score(this.snake.length,"Justin",$bind(this,this.reset_scoreboard));
+			var score = this.snake.length;
+			var is_hi_score = this.scoreboard.is_new_hi_score(score);
+			var game_over_screen = new GameOverScreen(is_hi_score);
+			game_over_screen.set_x(Tile.tile_width * 30 / 2 - game_over_screen.get_width() / 2);
+			game_over_screen.set_y(Tile.tile_height * 30 / 2 - game_over_screen.get_height() / 2);
+			if(is_hi_score) game_over_screen.set_callback(function(name) {
+				Client.send_score(score,name,$bind(_g,_g.reset_scoreboard));
+			});
 			this.first_game_over_frame = false;
 		}
 		if(this.frame_number % 1250 == 0) this.reset_scoreboard(null);
@@ -1753,6 +1761,51 @@ Field.prototype = {
 	}
 	,__class__: Field
 };
+var GameOverScreen = function(new_hi) {
+	openfl_display_Sprite.call(this);
+	this.addEventListener("textInput",$bind(this,this.wait_for_enter));
+	this.set_width(100);
+	this.set_height(50);
+	this.title = new openfl_text_TextField();
+	this.title.set_x(0);
+	this.title.set_y(0);
+	if(new_hi) {
+		this.title.set_htmlText("<h1>New High Score!</h1>");
+		this.input = new openfl_text_TextField();
+		this.input.set_selectable(true);
+		this.input.set_type(1);
+		this.input.set_border(true);
+		this.input.set_borderColor(0);
+		this.input.set_x(0);
+		this.input.set_y(30);
+		this.addChild(this.input);
+	} else this.title.set_htmlText("<h1>Game Over</h1>");
+	this.addChild(this.title);
+	this.draw();
+};
+$hxClasses["GameOverScreen"] = GameOverScreen;
+GameOverScreen.__name__ = ["GameOverScreen"];
+GameOverScreen.__super__ = openfl_display_Sprite;
+GameOverScreen.prototype = $extend(openfl_display_Sprite.prototype,{
+	title: null
+	,input: null
+	,input_callback: null
+	,draw: function() {
+		this.get_graphics().beginFill(7829367);
+		this.get_graphics().drawRect(0,0,this.get_width(),this.get_height());
+		this.get_graphics().endFill();
+	}
+	,wait_for_enter: function(e) {
+		if(e != null && e.type == "textInput" && e.text != null && e.text != "") {
+			var c = e.text.charAt(e.text.length - 1);
+			if(c == "\r" || c == "\n") this.input_callback(e.text.substring(0,e.text.length - 1));
+		}
+	}
+	,set_callback: function(_input_callback) {
+		this.input_callback = _input_callback;
+	}
+	,__class__: GameOverScreen
+});
 var HxOverrides = function() { };
 $hxClasses["HxOverrides"] = HxOverrides;
 HxOverrides.__name__ = ["HxOverrides"];
@@ -3076,16 +3129,22 @@ Scoreboard.__name__ = ["Scoreboard"];
 Scoreboard.__super__ = openfl_text_TextField;
 Scoreboard.prototype = $extend(openfl_text_TextField.prototype,{
 	BORDER_PX: null
+	,cached: null
 	,create_text_box: function(s) {
-		haxe_Log.trace("got scores " + s,{ fileName : "Scoreboard.hx", lineNumber : 22, className : "Scoreboard", methodName : "create_text_box"});
+		haxe_Log.trace("got scores " + s,{ fileName : "Scoreboard.hx", lineNumber : 23, className : "Scoreboard", methodName : "create_text_box"});
 		this.set_x(Tile.tile_width * 30 + this.BORDER_PX);
 		this.set_y(0);
 		this.set_htmlText("<h1>High Scores</h1>\n");
 		if(s != null) {
+			this.cached = Server.parse_hi_scores(s);
 			var _g = this;
 			_g.set_htmlText(_g.get_htmlText() + ("<pre>" + s + "</ pre>"));
 		}
 		this.set_textColor(16777215);
+	}
+	,is_new_hi_score: function(score) {
+		var top = this.cached[0].score;
+		return score > top;
 	}
 	,__class__: Scoreboard
 });
@@ -5367,7 +5426,7 @@ var lime_AssetCache = function() {
 	this.audio = new haxe_ds_StringMap();
 	this.font = new haxe_ds_StringMap();
 	this.image = new haxe_ds_StringMap();
-	this.version = 124998;
+	this.version = 17832;
 };
 $hxClasses["lime.AssetCache"] = lime_AssetCache;
 lime_AssetCache.__name__ = ["lime","AssetCache"];
@@ -34987,6 +35046,7 @@ openfl_text_TextField.__regexTabStops = new EReg("tabstops=(\"([^\"]+)\"|'([^']+
 openfl_text_TextField.__regexSize = new EReg("size=(\"([^\"]+)\"|'([^']+)')","i");
 Server.hi_score_file = "hi_scores.txt";
 Server.delim = ", ";
+Server.entry_delim = "\n";
 haxe_Serializer.USE_CACHE = false;
 haxe_Serializer.USE_ENUM_INDEX = false;
 haxe_Serializer.BASE64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789%:";

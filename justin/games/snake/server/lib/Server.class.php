@@ -31,6 +31,7 @@ class Server {
 	}}
 	static $hi_score_file = "hi_scores.txt";
 	static $delim = ", ";
+	static $entry_delim = "\x0A";
 	static function parse_hi_scores($txt) {
 		$result = (new _hx_array(array()));
 		{
