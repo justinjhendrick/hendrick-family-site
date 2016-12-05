@@ -1746,6 +1746,7 @@ Field.prototype = {
 			var game_over_screen = new GameOverScreen(is_hi_score);
 			game_over_screen.set_x(Tile.tile_width * 30 / 2 - game_over_screen.get_width() / 2);
 			game_over_screen.set_y(Tile.tile_height * 30 / 2 - game_over_screen.get_height() / 2);
+			this.main_sprite.addChild(game_over_screen);
 			if(is_hi_score) game_over_screen.set_callback(function(name) {
 				Client.send_score(score,name,$bind(_g,_g.reset_scoreboard));
 			});
@@ -5426,7 +5427,7 @@ var lime_AssetCache = function() {
 	this.audio = new haxe_ds_StringMap();
 	this.font = new haxe_ds_StringMap();
 	this.image = new haxe_ds_StringMap();
-	this.version = 17832;
+	this.version = 581974;
 };
 $hxClasses["lime.AssetCache"] = lime_AssetCache;
 lime_AssetCache.__name__ = ["lime","AssetCache"];
