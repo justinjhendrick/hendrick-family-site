@@ -2063,6 +2063,7 @@ Scoreboard.prototype = {
 	,cached: null
 	,display: function(s) {
 		haxe_Log.trace("got scores " + s,{ fileName : "Scoreboard.hx", lineNumber : 34, className : "Scoreboard", methodName : "display"});
+		this.cached = Server.parse_hi_scores(s);
 		var doc = window.document;
 		var hi_scores = doc.getElementById("hi_scores");
 		if(s != null) hi_scores.innerText = s;
@@ -4356,7 +4357,7 @@ var lime_AssetCache = function() {
 	this.audio = new haxe_ds_StringMap();
 	this.font = new haxe_ds_StringMap();
 	this.image = new haxe_ds_StringMap();
-	this.version = 429915;
+	this.version = 574307;
 };
 $hxClasses["lime.AssetCache"] = lime_AssetCache;
 lime_AssetCache.__name__ = ["lime","AssetCache"];
