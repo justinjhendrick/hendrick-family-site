@@ -8,7 +8,7 @@ class Client {
 		$cnx->setErrorHandler(array(new _hx_lambda(array(&$callback, &$cnx, &$name, &$score), "Client_0"), 'execute'));
 		$cnx->resolve("Server")->resolve("handle_score")->call((new _hx_array(array($score, $name))), $callback);
 	}
-	static function get_scores_raw($callback) {
+	static function get_scores($callback) {
 		$http = new haxe_Http(_hx_string_or_null(Client::$serverUrl) . _hx_string_or_null(Server::$hi_score_file));
 		$http->onData = $callback;
 		$http->request(null);

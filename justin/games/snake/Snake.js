@@ -12,7 +12,7 @@ var ApplicationMain = function() { };
 $hxClasses["ApplicationMain"] = ApplicationMain;
 ApplicationMain.__name__ = ["ApplicationMain"];
 ApplicationMain.main = function() {
-	ApplicationMain.config = { build : "17", company : "Company Name", file : "Snake", fps : 25, name : "Snake", orientation : "", packageName : "com.sample.snake", version : "1.0.0", windows : [{ allowHighDPI : false, antialiasing : 0, background : 0, borderless : false, depthBuffer : false, display : 0, fullscreen : false, hardware : true, height : 0, hidden : null, maximized : null, minimized : null, parameters : "{}", resizable : true, stencilBuffer : true, title : "Snake", vsync : false, width : 0, x : null, y : null}]};
+	ApplicationMain.config = { build : "19", company : "Company Name", file : "Snake", fps : 25, name : "Snake", orientation : "", packageName : "com.sample.snake", version : "1.0.0", windows : [{ allowHighDPI : false, antialiasing : 0, background : 0, borderless : false, depthBuffer : false, display : 0, fullscreen : false, hardware : true, height : 0, hidden : null, maximized : null, minimized : null, parameters : "{}", resizable : true, stencilBuffer : true, title : "Snake", vsync : false, width : 0, x : null, y : null}]};
 };
 ApplicationMain.create = function() {
 	var app = new openfl_display_Application();
@@ -1406,7 +1406,7 @@ Client.send_score = function(score,name,callback) {
 	});
 	cnx.resolve("Server").resolve("handle_score").call([score,name],callback);
 };
-Client.get_scores_raw = function(callback) {
+Client.get_scores = function(callback) {
 	var http = new haxe_Http(Client.serverUrl + Server.hi_score_file);
 	http.onData = callback;
 	http.request();
@@ -1685,7 +1685,6 @@ GameResult.GAME_OVER = ["GAME_OVER",1];
 GameResult.GAME_OVER.toString = $estr;
 GameResult.GAME_OVER.__enum__ = GameResult;
 var Field = function(_main_sprite) {
-	this.frame_number = 0;
 	this.first_frame = true;
 	this.first_game_over_frame = false;
 	this.game_over = false;
@@ -1700,24 +1699,25 @@ Field.prototype = {
 	,game_over: null
 	,first_game_over_frame: null
 	,scoreboard: null
+	,init: function() {
+		this.tile_grid = new TileGrid(30,30);
+		this.main_sprite.addChild(this.tile_grid);
+		this.scoreboard = new Scoreboard(null);
+		this.main_sprite.addChild(this.scoreboard);
+		this.main_sprite.stage.addEventListener("resize",($_=this.tile_grid,$bind($_,$_.create_grid_bitmap)));
+		this.main_sprite.stage.addEventListener("resize",($_=this.tile_grid,$bind($_,$_.redraw_apple)));
+		this.snake = new Snake(3,Direction.RIGHT,3,0,this.tile_grid);
+		this.tile_grid.place_apple(this.snake);
+	}
 	,first_frame: null
-	,frame_number: null
 	,every_frame: function() {
-		var _g = this;
 		if(!this.game_over) {
 			if(this.first_frame) {
-				this.tile_grid = new TileGrid(30,30);
-				this.main_sprite.addChild(this.tile_grid);
-				this.scoreboard = new Scoreboard(null);
-				this.main_sprite.addChild(this.scoreboard);
-				this.main_sprite.stage.addEventListener("resize",($_=this.tile_grid,$bind($_,$_.create_grid_bitmap)));
-				this.main_sprite.stage.addEventListener("resize",($_=this.tile_grid,$bind($_,$_.redraw_apple)));
-				this.snake = new Snake(3,Direction.RIGHT,3,0,this.tile_grid);
-				this.tile_grid.place_apple(this.snake);
+				this.init();
 				this.first_frame = false;
 			}
-			var _g1 = Player.get_input();
-			switch(_g1[1]) {
+			var _g = Player.get_input();
+			switch(_g[1]) {
 			case 1:
 				this.snake.set_dir(Direction.UP);
 				break;
@@ -1741,19 +1741,21 @@ Field.prototype = {
 				this.first_game_over_frame = true;
 			}
 		} else if(this.first_game_over_frame) {
-			var score = this.snake.length;
-			var is_hi_score = this.scoreboard.is_new_hi_score(score);
-			var game_over_screen = new GameOverScreen(is_hi_score);
-			game_over_screen.set_x(Tile.tile_width * 30 / 2 - game_over_screen.get_width() / 2);
-			game_over_screen.set_y(Tile.tile_height * 30 / 2 - game_over_screen.get_height() / 2);
-			this.main_sprite.addChild(game_over_screen);
-			if(is_hi_score) game_over_screen.set_callback(function(name) {
-				Client.send_score(score,name,$bind(_g,_g.reset_scoreboard));
-			});
+			this.init_game_over();
 			this.first_game_over_frame = false;
 		}
-		if(this.frame_number % 1250 == 0) this.reset_scoreboard(null);
-		this.frame_number += 1;
+	}
+	,init_game_over: function() {
+		var _g = this;
+		var score = this.snake.length;
+		var is_hi_score = this.scoreboard.is_new_hi_score(score);
+		var game_over_screen = new GameOverScreen(is_hi_score);
+		game_over_screen.set_x(Tile.tile_width * 30 / 2 - game_over_screen.width_px / 2);
+		game_over_screen.set_y(Tile.tile_height * 30 / 2 - game_over_screen.height_px / 2);
+		this.main_sprite.addChild(game_over_screen);
+		if(is_hi_score) game_over_screen.set_callback(function(name) {
+			Client.send_score(score,name,$bind(_g,_g.reset_scoreboard));
+		});
 	}
 	,reset_scoreboard: function(new_scores) {
 		this.main_sprite.removeChild(this.scoreboard);
@@ -1763,22 +1765,29 @@ Field.prototype = {
 	,__class__: Field
 };
 var GameOverScreen = function(new_hi) {
+	this.height_px = 50;
+	this.width_px = 100;
 	openfl_display_Sprite.call(this);
 	this.addEventListener("textInput",$bind(this,this.wait_for_enter));
-	this.set_width(100);
-	this.set_height(50);
+	this.set_height(this.height_px);
 	this.title = new openfl_text_TextField();
 	this.title.set_x(0);
 	this.title.set_y(0);
+	this.title.set_textColor(16777215);
 	if(new_hi) {
 		this.title.set_htmlText("<h1>New High Score!</h1>");
 		this.input = new openfl_text_TextField();
-		this.input.set_selectable(true);
 		this.input.set_type(1);
+		this.input.set_selectable(true);
+		this.input.set_multiline(false);
 		this.input.set_border(true);
-		this.input.set_borderColor(0);
+		this.input.set_borderColor(16711680);
 		this.input.set_x(0);
 		this.input.set_y(30);
+		this.input.set_height(this.height_px - this.input.get_y());
+		this.input.set_background(true);
+		this.input.set_backgroundColor(16777215);
+		this.input.set_textColor(0);
 		this.addChild(this.input);
 	} else this.title.set_htmlText("<h1>Game Over</h1>");
 	this.addChild(this.title);
@@ -1790,14 +1799,17 @@ GameOverScreen.__super__ = openfl_display_Sprite;
 GameOverScreen.prototype = $extend(openfl_display_Sprite.prototype,{
 	title: null
 	,input: null
+	,width_px: null
+	,height_px: null
 	,input_callback: null
 	,draw: function() {
-		this.get_graphics().beginFill(7829367);
-		this.get_graphics().drawRect(0,0,this.get_width(),this.get_height());
+		this.get_graphics().beginFill(0);
+		this.get_graphics().drawRect(0,0,this.width_px,this.height_px);
 		this.get_graphics().endFill();
 	}
 	,wait_for_enter: function(e) {
 		if(e != null && e.type == "textInput" && e.text != null && e.text != "") {
+			haxe_Log.trace(e.text,{ fileName : "GameOverScreen.hx", lineNumber : 71, className : "GameOverScreen", methodName : "wait_for_enter"});
 			var c = e.text.charAt(e.text.length - 1);
 			if(c == "\r" || c == "\n") this.input_callback(e.text.substring(0,e.text.length - 1));
 		}
@@ -1983,7 +1995,6 @@ var Player = function() { };
 $hxClasses["Player"] = Player;
 Player.__name__ = ["Player"];
 Player.key_down = function(e) {
-	var kc = e.keyCode;
 	Player.input_queue.add(e);
 };
 Player.get_input = function() {
@@ -3122,8 +3133,14 @@ openfl_text_TextField.prototype = $extend(openfl_display_InteractiveObject.proto
 });
 var Scoreboard = function(new_scores) {
 	this.BORDER_PX = 20;
+	var _g = this;
 	openfl_text_TextField.call(this);
-	if(new_scores == null) Client.get_scores_raw($bind(this,this.create_text_box)); else this.create_text_box(new_scores);
+	if(new_scores == null) Client.get_scores($bind(this,this.create_text_box)); else this.create_text_box(new_scores);
+	var interval_ms = 60000;
+	var refresh_timer = new haxe_Timer(interval_ms);
+	refresh_timer.run = function() {
+		Client.get_scores($bind(_g,_g.create_text_box));
+	};
 };
 $hxClasses["Scoreboard"] = Scoreboard;
 Scoreboard.__name__ = ["Scoreboard"];
@@ -3132,7 +3149,7 @@ Scoreboard.prototype = $extend(openfl_text_TextField.prototype,{
 	BORDER_PX: null
 	,cached: null
 	,create_text_box: function(s) {
-		haxe_Log.trace("got scores " + s,{ fileName : "Scoreboard.hx", lineNumber : 23, className : "Scoreboard", methodName : "create_text_box"});
+		haxe_Log.trace("got scores " + s,{ fileName : "Scoreboard.hx", lineNumber : 35, className : "Scoreboard", methodName : "create_text_box"});
 		this.set_x(Tile.tile_width * 30 + this.BORDER_PX);
 		this.set_y(0);
 		this.set_htmlText("<h1>High Scores</h1>\n");
@@ -3224,14 +3241,14 @@ Snake.prototype = {
 			}
 		}
 	}
-	,near_miss_tail: function(new_head_x,new_head_y,next_tile) {
-		return new_head_x == this.tail_x && new_head_y == this.tail_y && js_Boot.__instanceof(next_tile,SnakeTile);
+	,near_miss_tail: function(new_head_x,new_head_y) {
+		return new_head_x == this.tail_x && new_head_y == this.tail_y;
 	}
 	,move: function(tiles) {
 		var new_head_y = Util.modulo(this.head_y + this.delta_y,30);
 		var new_head_x = Util.modulo(this.head_x + this.delta_x,30);
 		var next_tile = tiles.read(new_head_x,new_head_y);
-		if(js_Boot.__instanceof(next_tile,EmptyTile) || new_head_x == this.tail_x && new_head_y == this.tail_y && js_Boot.__instanceof(next_tile,SnakeTile)) {
+		if(js_Boot.__instanceof(next_tile,EmptyTile) || new_head_x == this.tail_x && new_head_y == this.tail_y) {
 			var old_tail;
 			old_tail = js_Boot.__cast(tiles.read(this.tail_x,this.tail_y) , SnakeTile);
 			tiles.write(new EmptyTile(this.tail_x,this.tail_y));
@@ -3389,15 +3406,13 @@ Tile.prototype = $extend(openfl_display_Shape.prototype,{
 	,__class__: Tile
 });
 var EmptyTile = function(_x,_y) {
-	this.COLOR = 0;
 	Tile.call(this,_x,_y);
 };
 $hxClasses["EmptyTile"] = EmptyTile;
 EmptyTile.__name__ = ["EmptyTile"];
 EmptyTile.__super__ = Tile;
 EmptyTile.prototype = $extend(Tile.prototype,{
-	COLOR: null
-	,__class__: EmptyTile
+	__class__: EmptyTile
 });
 var SnakeTile = function(_x,_y) {
 	this.COLOR = 255;
@@ -3701,7 +3716,7 @@ Util.modulo = function(n,d) {
 	return r;
 };
 Util.round_up = function(n) {
-	return (n | 0) + 1;
+	if(n == 0.0) return 0; else if(n > 0.0) return (n | 0) + 1; else return (n | 0) - 1;
 };
 var haxe_StackItem = $hxClasses["haxe.StackItem"] = { __ename__ : ["haxe","StackItem"], __constructs__ : ["CFunction","Module","FilePos","Method","LocalFunction"] };
 haxe_StackItem.CFunction = ["CFunction",0];
@@ -5428,7 +5443,7 @@ var lime_AssetCache = function() {
 	this.audio = new haxe_ds_StringMap();
 	this.font = new haxe_ds_StringMap();
 	this.image = new haxe_ds_StringMap();
-	this.version = 58274;
+	this.version = 629040;
 };
 $hxClasses["lime.AssetCache"] = lime_AssetCache;
 lime_AssetCache.__name__ = ["lime","AssetCache"];
