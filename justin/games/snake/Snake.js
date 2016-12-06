@@ -13,7 +13,7 @@ var ApplicationMain = function() { };
 $hxClasses["ApplicationMain"] = ApplicationMain;
 ApplicationMain.__name__ = ["ApplicationMain"];
 ApplicationMain.main = function() {
-	ApplicationMain.config = { build : "22", company : "Company Name", file : "Snake", fps : 25, name : "Snake", orientation : "", packageName : "com.sample.snake", version : "1.0.0", windows : [{ allowHighDPI : false, antialiasing : 0, background : 0, borderless : false, depthBuffer : false, display : 0, fullscreen : false, hardware : true, height : 0, hidden : null, maximized : null, minimized : null, parameters : "{}", resizable : true, stencilBuffer : true, title : "Snake", vsync : false, width : 0, x : null, y : null}]};
+	ApplicationMain.config = { build : "23", company : "Company Name", file : "Snake", fps : 25, name : "Snake", orientation : "", packageName : "com.sample.snake", version : "1.0.0", windows : [{ allowHighDPI : false, antialiasing : 0, background : 0, borderless : false, depthBuffer : false, display : 0, fullscreen : false, hardware : true, height : 0, hidden : null, maximized : null, minimized : null, parameters : "{}", resizable : true, stencilBuffer : true, title : "Snake", vsync : false, width : 0, x : null, y : null}]};
 };
 ApplicationMain.create = function() {
 	var app = new openfl_display_Application();
@@ -1752,7 +1752,7 @@ Field.prototype = {
 	,init_game_over: function() {
 		var score = this.snake.length;
 		var is_hi_score = this.scoreboard.is_new_hi_score(score);
-		var game_over_screen = new GameOverScreen(is_hi_score);
+		var game_over_screen = new GameOverScreen(is_hi_score,score);
 		game_over_screen.set_x(Tile.tile_width * 30 / 2 - game_over_screen.width_px / 2);
 		game_over_screen.set_y(Tile.tile_height * 30 / 2 - game_over_screen.height_px / 2);
 		this.main_sprite.addChild(game_over_screen);
@@ -1764,7 +1764,7 @@ Field.prototype = {
 	}
 	,__class__: Field
 };
-var GameOverScreen = function(new_hi) {
+var GameOverScreen = function(new_hi,score) {
 	this.height_px = 40;
 	this.width_px = 120;
 	openfl_display_Sprite.call(this);
@@ -1773,7 +1773,7 @@ var GameOverScreen = function(new_hi) {
 	this.title.set_y(0);
 	this.title.set_textColor(16777215);
 	this.title.set_selectable(true);
-	if(new_hi) this.title.set_htmlText("<h1>New High Score!</h1>"); else this.title.set_htmlText("<h1>Game Over</h1>");
+	if(new_hi) this.title.set_htmlText("<h1>" + score + ", New High Score!</h1>"); else this.title.set_htmlText("<h1>Game Over</h1>");
 	this.addChild(this.title);
 	this.draw();
 };
@@ -4356,7 +4356,7 @@ var lime_AssetCache = function() {
 	this.audio = new haxe_ds_StringMap();
 	this.font = new haxe_ds_StringMap();
 	this.image = new haxe_ds_StringMap();
-	this.version = 680982;
+	this.version = 429915;
 };
 $hxClasses["lime.AssetCache"] = lime_AssetCache;
 lime_AssetCache.__name__ = ["lime","AssetCache"];
