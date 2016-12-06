@@ -1,4 +1,5 @@
 (function (console, $hx_exports, $global) { "use strict";
+$hx_exports.Client = $hx_exports.Client || {};
 $hx_exports.openfl = $hx_exports.openfl || {};
 $hx_exports.lime = $hx_exports.lime || {};
 var $hxClasses = {},$estr = function() { return js_Boot.__string_rec(this,''); };
@@ -12,7 +13,7 @@ var ApplicationMain = function() { };
 $hxClasses["ApplicationMain"] = ApplicationMain;
 ApplicationMain.__name__ = ["ApplicationMain"];
 ApplicationMain.main = function() {
-	ApplicationMain.config = { build : "20", company : "Company Name", file : "Snake", fps : 25, name : "Snake", orientation : "", packageName : "com.sample.snake", version : "1.0.0", windows : [{ allowHighDPI : false, antialiasing : 0, background : 0, borderless : false, depthBuffer : false, display : 0, fullscreen : false, hardware : true, height : 0, hidden : null, maximized : null, minimized : null, parameters : "{}", resizable : true, stencilBuffer : true, title : "Snake", vsync : false, width : 0, x : null, y : null}]};
+	ApplicationMain.config = { build : "22", company : "Company Name", file : "Snake", fps : 25, name : "Snake", orientation : "", packageName : "com.sample.snake", version : "1.0.0", windows : [{ allowHighDPI : false, antialiasing : 0, background : 0, borderless : false, depthBuffer : false, display : 0, fullscreen : false, hardware : true, height : 0, hidden : null, maximized : null, minimized : null, parameters : "{}", resizable : true, stencilBuffer : true, title : "Snake", vsync : false, width : 0, x : null, y : null}]};
 };
 ApplicationMain.create = function() {
 	var app = new openfl_display_Application();
@@ -1399,12 +1400,16 @@ DocumentClass.prototype = $extend(Main.prototype,{
 var Client = function() { };
 $hxClasses["Client"] = Client;
 Client.__name__ = ["Client"];
-Client.send_score = function(score,name,callback) {
+Client.send_score = $hx_exports.Client.send_score = function() {
+	var doc = window.document;
+	var input_elem;
+	input_elem = js_Boot.__cast(doc.getElementById("name_input") , HTMLInputElement);
+	var name = input_elem.value;
 	var cnx = haxe_remoting_HttpAsyncConnection.urlConnect(Client.serverUrl + "index.php");
 	cnx.setErrorHandler(function(err) {
-		haxe_Log.trace("Error: " + err,{ fileName : "Client.hx", lineNumber : 15, className : "Client", methodName : "send_score"});
+		haxe_Log.trace("Error: " + err,{ fileName : "Client.hx", lineNumber : 26, className : "Client", methodName : "send_score"});
 	});
-	cnx.resolve("Server").resolve("handle_score").call([score,name],callback);
+	cnx.resolve("Server").resolve("handle_score").call([Client.score,name],Client.response_callback);
 };
 Client.get_scores = function(callback) {
 	var http = new haxe_Http(Client.serverUrl + Server.hi_score_file);
@@ -1745,45 +1750,30 @@ Field.prototype = {
 		}
 	}
 	,init_game_over: function() {
-		var _g = this;
 		var score = this.snake.length;
 		var is_hi_score = this.scoreboard.is_new_hi_score(score);
 		var game_over_screen = new GameOverScreen(is_hi_score);
 		game_over_screen.set_x(Tile.tile_width * 30 / 2 - game_over_screen.width_px / 2);
 		game_over_screen.set_y(Tile.tile_height * 30 / 2 - game_over_screen.height_px / 2);
 		this.main_sprite.addChild(game_over_screen);
-		if(is_hi_score) game_over_screen.set_callback(function(name) {
-			Client.send_score(score,name,($_=_g.scoreboard,$bind($_,$_.display)));
-		});
+		if(is_hi_score) {
+			Client.score = score;
+			Client.response_callback = ($_=this.scoreboard,$bind($_,$_.display));
+			this.scoreboard.request_player_name();
+		}
 	}
 	,__class__: Field
 };
 var GameOverScreen = function(new_hi) {
-	this.height_px = 50;
-	this.width_px = 100;
+	this.height_px = 40;
+	this.width_px = 120;
 	openfl_display_Sprite.call(this);
-	this.addEventListener("textInput",$bind(this,this.wait_for_enter));
 	this.title = new openfl_text_TextField();
 	this.title.set_x(0);
 	this.title.set_y(0);
 	this.title.set_textColor(16777215);
 	this.title.set_selectable(true);
-	if(new_hi) {
-		this.title.set_htmlText("<h1>New High Score!</h1>");
-		this.input = new openfl_text_TextField();
-		this.input.set_type(1);
-		this.input.set_border(true);
-		this.input.set_borderColor(16711680);
-		this.input.set_x(0);
-		this.input.set_y(30);
-		this.input.set_height(this.height_px - this.input.get_y());
-		this.input.set_width(this.width_px);
-		this.input.set_background(true);
-		this.input.set_backgroundColor(16777215);
-		this.input.set_textColor(0);
-		this.input.set_text("enter your name");
-		this.addChild(this.input);
-	} else this.title.set_htmlText("<h1>Game Over</h1>");
+	if(new_hi) this.title.set_htmlText("<h1>New High Score!</h1>"); else this.title.set_htmlText("<h1>Game Over</h1>");
 	this.addChild(this.title);
 	this.draw();
 };
@@ -1792,24 +1782,12 @@ GameOverScreen.__name__ = ["GameOverScreen"];
 GameOverScreen.__super__ = openfl_display_Sprite;
 GameOverScreen.prototype = $extend(openfl_display_Sprite.prototype,{
 	title: null
-	,input: null
 	,width_px: null
 	,height_px: null
-	,input_callback: null
 	,draw: function() {
 		this.get_graphics().beginFill(0);
 		this.get_graphics().drawRect(0,0,this.width_px,30);
 		this.get_graphics().endFill();
-	}
-	,wait_for_enter: function(e) {
-		if(e != null && e.type == "textInput" && e.text != null && e.text != "") {
-			haxe_Log.trace(e.text,{ fileName : "GameOverScreen.hx", lineNumber : 72, className : "GameOverScreen", methodName : "wait_for_enter"});
-			var c = e.text.charAt(e.text.length - 1);
-			if(c == "\r" || c == "\n") this.input_callback(e.text.substring(0,e.text.length - 1));
-		}
-	}
-	,set_callback: function(_input_callback) {
-		this.input_callback = _input_callback;
 	}
 	,__class__: GameOverScreen
 });
@@ -2093,6 +2071,12 @@ Scoreboard.prototype = {
 		if(this.cached == null) return true;
 		var top = this.cached[0].score;
 		return score > top;
+	}
+	,request_player_name: function() {
+		var doc = window.document;
+		var input_form = doc.getElementById("name_form");
+		input_form.removeAttribute("hidden");
+		input_form.setAttribute("action","javascript:Client.send_score()");
 	}
 	,__class__: Scoreboard
 };
@@ -4372,7 +4356,7 @@ var lime_AssetCache = function() {
 	this.audio = new haxe_ds_StringMap();
 	this.font = new haxe_ds_StringMap();
 	this.image = new haxe_ds_StringMap();
-	this.version = 131882;
+	this.version = 680982;
 };
 $hxClasses["lime.AssetCache"] = lime_AssetCache;
 lime_AssetCache.__name__ = ["lime","AssetCache"];

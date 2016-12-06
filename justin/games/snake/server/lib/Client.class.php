@@ -3,10 +3,11 @@
 class Client {
 	public function __construct(){}
 	static $serverUrl = "http://www.hendrick.family/justin/games/snake/server/";
-	static function send_score($score, $name, $callback) {
-		$cnx = haxe_remoting_HttpAsyncConnection::urlConnect(_hx_string_or_null(Client::$serverUrl) . "index.php");
-		$cnx->setErrorHandler(array(new _hx_lambda(array(&$callback, &$cnx, &$name, &$score), "Client_0"), 'execute'));
-		$cnx->resolve("Server")->resolve("handle_score")->call((new _hx_array(array($score, $name))), $callback);
+	static $score;
+	static function response_callback() { $args = func_get_args(); return call_user_func_array(self::$response_callback, $args); }
+	static $response_callback;
+	static function send_score() {
+		haxe_Log::trace("hi scores not yet supported on this platform", _hx_anonymous(array("fileName" => "Client.hx", "lineNumber" => 29, "className" => "Client", "methodName" => "send_score")));
 	}
 	static function get_scores($callback) {
 		$http = new haxe_Http(_hx_string_or_null(Client::$serverUrl) . _hx_string_or_null(Server::$hi_score_file));
@@ -14,9 +15,4 @@ class Client {
 		$http->request(null);
 	}
 	function __toString() { return 'Client'; }
-}
-function Client_0(&$callback, &$cnx, &$name, &$score, $err) {
-	{
-		haxe_Log::trace("Error: " . _hx_string_or_null($err), _hx_anonymous(array("fileName" => "Client.hx", "lineNumber" => 15, "className" => "Client", "methodName" => "send_score")));
-	}
 }

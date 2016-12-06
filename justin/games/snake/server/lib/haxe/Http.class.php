@@ -23,16 +23,6 @@ class haxe_Http {
 	public $postData;
 	public $headers;
 	public $params;
-	public function setHeader($header, $value) {
-		$this->headers = Lambda::filter($this->headers, array(new _hx_lambda(array(&$header, &$value), "haxe_Http_3"), 'execute'));
-		$this->headers->push(_hx_anonymous(array("header" => $header, "value" => $value)));
-		return $this;
-	}
-	public function setParameter($param, $value) {
-		$this->params = Lambda::filter($this->params, array(new _hx_lambda(array(&$param, &$value), "haxe_Http_4"), 'execute'));
-		$this->params->push(_hx_anonymous(array("param" => $param, "value" => $value)));
-		return $this;
-	}
 	public function request($post = null) {
 		$_g = $this;
 		$me = $this;
@@ -40,7 +30,7 @@ class haxe_Http {
 		$output = new haxe_io_BytesOutput();
 		$old = (isset($this->onError) ? $this->onError: array($this, "onError"));
 		$err = false;
-		$this->onError = array(new _hx_lambda(array(&$_g, &$err, &$me, &$me1, &$old, &$output, &$post), "haxe_Http_5"), 'execute');
+		$this->onError = array(new _hx_lambda(array(&$_g, &$err, &$me, &$me1, &$old, &$output, &$post), "haxe_Http_3"), 'execute');
 		$this->customRequest($post, $output, null, null);
 		if(!$err) {
 			$me1->onData($me1->responseData = $output->getBytes()->toString());
@@ -162,7 +152,7 @@ class haxe_Http {
 			$b1->add("Content-Length: " . _hx_string_rec(strlen($this->postData), "") . "\x0D\x0A");
 		} else {
 			if($post && $uri !== null) {
-				if($multipart || !Lambda::exists($this->headers, array(new _hx_lambda(array(&$api, &$b1, &$boundary, &$data, &$host, &$method, &$multipart, &$port, &$portString, &$post, &$request, &$secure, &$sock, &$uri, &$url_regexp), "haxe_Http_6"), 'execute'))) {
+				if($multipart || !Lambda::exists($this->headers, array(new _hx_lambda(array(&$api, &$b1, &$boundary, &$data, &$host, &$method, &$multipart, &$port, &$portString, &$post, &$request, &$secure, &$sock, &$uri, &$url_regexp), "haxe_Http_4"), 'execute'))) {
 					$b1->add("Content-Type: ");
 					if($multipart) {
 						$b1->add("multipart/form-data");
@@ -531,17 +521,7 @@ function haxe_Http_1(&$__hx__this, &$url, $msg) {
 function haxe_Http_2(&$__hx__this, &$url, $status) {
 	{}
 }
-function haxe_Http_3(&$header, &$value, $h) {
-	{
-		return $h->header !== $header;
-	}
-}
-function haxe_Http_4(&$param, &$value, $p) {
-	{
-		return $p->param !== $param;
-	}
-}
-function haxe_Http_5(&$_g, &$err, &$me, &$me1, &$old, &$output, &$post, $e) {
+function haxe_Http_3(&$_g, &$err, &$me, &$me1, &$old, &$output, &$post, $e) {
 	{
 		$me1->responseData = $output->getBytes()->toString();
 		$err = true;
@@ -549,7 +529,7 @@ function haxe_Http_5(&$_g, &$err, &$me, &$me1, &$old, &$output, &$post, $e) {
 		$_g->onError($e);
 	}
 }
-function haxe_Http_6(&$api, &$b1, &$boundary, &$data, &$host, &$method, &$multipart, &$port, &$portString, &$post, &$request, &$secure, &$sock, &$uri, &$url_regexp, $h) {
+function haxe_Http_4(&$api, &$b1, &$boundary, &$data, &$host, &$method, &$multipart, &$port, &$portString, &$post, &$request, &$secure, &$sock, &$uri, &$url_regexp, $h) {
 	{
 		return $h->header === "Content-Type";
 	}
